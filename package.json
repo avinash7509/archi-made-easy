@@ -1,6 +1,6 @@
 {
   "name": "archi-made-easy",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Evidence-backed architecture reasoning and editable diagrams",
   "license": "Apache-2.0",
@@ -18,7 +18,8 @@
     "prepack": "npm run build",
     "demo:quick": "node dist/cli.js render examples/hybrid.json --out artifacts/demo --no-raster",
     "demo:public": "npm run build && node scripts/build-public-demo.mjs",
-    "benchmark:fixtures": "node dist/cli.js benchmark benchmarks/manifest.json --out artifacts/benchmark"
+    "benchmark:fixtures": "node dist/cli.js benchmark benchmarks/manifest.json --out artifacts/benchmark",
+    "package:skill": "npm run build && node scripts/package-skill.mjs"
   },
   "files": [
     "dist",

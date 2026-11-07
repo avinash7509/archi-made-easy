@@ -17,6 +17,8 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm test
+      - run: npm run package:skill
+      - run: node scripts/test-package.mjs
       - run: node dist/cli.js benchmark benchmarks/manifest.json --out artifacts/benchmark
       - run: node dist/cli.js render examples/hybrid.json --out artifacts/demo
       - uses: actions/upload-artifact@v4

@@ -1,11 +1,12 @@
 import {mkdir,writeFile} from 'node:fs/promises';
 import {readFileSync,existsSync} from 'node:fs';
 import {resolve,join} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {unzipSync} from 'fflate';
 import type {Component} from './model.js';
 const sha=(s:Uint8Array|string)=>createHash('sha256').update(s).digest('hex');
-const root=resolve(process.env.ARCHI_MADE_EASY_ASSETS??new URL('../.cache/icons',import.meta.url).pathname.replace(/^\/([A-Za-z]:)/,'$1'));
+const root=resolve(process.env.ARCHI_MADE_EASY_ASSETS??fileURLToPath(new URL('../.cache/icons',import.meta.url)));
 const catalogs:Record<string,{url:string;source:string;terms:string}>={
  azure:{url:'https://arch-center.azureedge.net/icons/Azure_Public_Service_Icons_V25.zip',source:'https://learn.microsoft.com/en-us/azure/architecture/icons/',terms:'Microsoft architecture icon terms; use for diagrams, preserve shape, do not imply endorsement. Local cache not redistributed in npm package.'},
  aws:{url:'https://d1.awsstatic.com/onedam/marketing-channels/website/public/shared/architecture-icon-release/Icon-package_07312026.5846e92413caa21490223536cc97f1269e44fa92.zip',source:'https://aws.amazon.com/architecture/icons/',terms:'AWS architecture icon terms apply. Local cache not redistributed in npm package.'},
