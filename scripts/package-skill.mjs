@@ -24,7 +24,7 @@ if(!npmCli)throw new Error('Build with npm run package:skill so the npm CLI path
 const install=spawnSync(process.execPath,[npmCli,'ci','--omit=dev','--ignore-scripts','--no-audit','--no-fund'],{cwd:runtime,stdio:'inherit'});
 if(install.status!==0)throw new Error('Could not assemble pinned runtime dependencies');
 
-let skill=await readFile(join(stage,'SKILL.md'),'utf8');
+let skill=(await readFile(join(stage,'SKILL.md'),'utf8')).replace(/\r\n/g,'\n');
 const start=skill.indexOf('Resolve the package root');const end=skill.indexOf('\n\n## Workflow',start);
 if(start<0||end<0)throw new Error('Skill runtime instructions changed; update the packager.');
 skill=skill.slice(0,start)+'The package root is `runtime/` beside this SKILL.md. Read `START-HERE.md` first. Node.js 22+ is required. Dependencies and compiled code are already included; do not run npm install or rebuild for ordinary use. Run `node setup.mjs` from the extracted skill directory to verify the runtime and generate the offline demo. Invoke `node <skill-directory>/archi-made-easy.mjs <command> ...`. For PNG/PDF exports, run `node setup.mjs --browser` once to install the platform-specific Chromium build. On Linux, missing system libraries may require an administrator to install Playwright browser dependencies. If the host cannot execute Node.js or access package files, use the references for reasoning only and report that executable validation/export is unavailable; never claim runtime checks ran.'+skill.slice(end);
