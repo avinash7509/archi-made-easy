@@ -24,6 +24,6 @@
 - Geometry checks cover core overlaps/containment/obstructed routes. Complete mathematical edge-label/crossing assurance and automatic perceptual review are not established.
 - Imported custom stencils/UserObject wrappers and concurrent multi-page editing are preserved/reported, not fully interpreted or merged.
 - The six reference-inspired fixtures are smoke cases, not pixel-faithful reconstructions of the supplied diagrams.
-- No 270-run multi-model evaluation, blind preference panel, executed macOS/Linux release verification, npm publication or public GitHub push has occurred.
+- No 270-run multi-model evaluation, blind preference panel, executed macOS/Linux release verification, npm publication has occurred. The source is public on GitHub.
 
 These are material implementation boundaries, not completed features. Fixture pass rates must not be used to claim the release quality targets or world-best performance.

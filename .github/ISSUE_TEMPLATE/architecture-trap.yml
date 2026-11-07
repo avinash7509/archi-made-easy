@@ -1,0 +1,32 @@
+name: Architecture trap or false positive
+description: Show a missed risk or a valid design the tool incorrectly flags.
+title: "[Architecture] "
+body:
+  - type: markdown
+    attributes:
+      value: "Use synthetic or anonymized models. Do not include credentials or private customer information."
+  - type: textarea
+    id: scenario
+    attributes:
+      label: Architecture and requirements
+    validations:
+      required: true
+  - type: textarea
+    id: model
+    attributes:
+      label: Minimal CASG and command
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result and supporting evidence
+      description: Include official documentation for provider-specific claims.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual finding or missing finding
+    validations:
+      required: true

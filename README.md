@@ -1,81 +1,124 @@
+<div align="center">
+
 # Archi-Made-Easy
 
-Evidence-backed architecture modeling, contextual assessment, failure analysis and editable diagrams for agents. Display name **Archi-Made-Easy**; CLI/package **archi-made-easy**.
+### Draw the architecture. Question the design. See what breaks.
 
-This is the first working **0.1.0 implementation**, not a completed claim of Principal Architect equivalence or superior visual quality. The host agent supplies architectural judgment; the local runtime provides repeatable mechanics. See [implementation status](docs/implementation-status.md) for explicit boundaries.
+An open-source architecture skill and local CLI for turning system models into **editable diagrams, risk assessments, and failure scenarios**.
 
-## Quick start
+[![Verify](https://github.com/avinash7509/archi-made-easy/actions/workflows/ci.yml/badge.svg)](https://github.com/avinash7509/archi-made-easy/actions/workflows/ci.yml)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![Node.js 22+](https://img.shields.io/badge/Node.js-22%2B-339933?logo=nodedotjs&logoColor=white)](package.json)
 
-Requires Node.js 22 or newer. Tested locally on Windows with Node.js 24. CI is configured for Windows, Linux and macOS; those remote runs have not been executed here.
+**[Try the live demo →](https://avinash7509.github.io/archi-made-easy/)** · [Quick start](#run-it-locally) · [Agent prompts](docs/prompts.md) · [Roadmap](ROADMAP.md)
+
+![Model a system, inspect its risks, simulate failure, export editable diagrams](docs/assets/overview.svg)
+
+</div>
+
+## Your diagram shows the happy path. What about the failure path?
+
+You are reviewing a design. The database fails. Which capabilities disappear? Is the fallback really independent? Does the public API bypass its WAF? And can someone edit the diagram after the meeting?
+
+Archi-Made-Easy connects those questions to one versioned architecture model. Your agent reads the evidence and reasons about the design; the local runtime checks declared facts, simulates dependencies, and produces the artifacts.
+
+**Start with the [interactive demo](https://avinash7509.github.io/archi-made-easy/).** Turn on **Failure simulation**, click **Order database**, then switch between **as-is** and **target**. It uses synthetic data and requires no account, API key, or installation.
+
+## What you get
+
+| In the architecture review | In the output folder |
+|---|---|
+| An honest picture of the current system | Preserved as-is model and diagram with risk callouts |
+| A proposed improvement, not an overwritten history | Separate target model, remediation diff, and residual findings |
+| “What fails when this goes down?” | Structural blast-radius analysis with required, optional, fallback, and quorum dependencies |
+| Security and reliability checks you can inspect | Six-pillar report with **pass / fail / unknown / not applicable**, plus evidence coverage |
+| Artifacts the next architect can edit | Native **draw.io**, SVG, PNG, PDF, and standalone interactive HTML |
+| Reasoning that travels with the diagram | Architecture dossier, assumptions, ADR starter, and scenario reports |
+
+**Local execution. Apache-2.0. No paid diagramming service required.** After setup, rendering and bundled assessments work offline. Provider refreshes and optional icon acquisition need network access.
+
+## Run it locally
+
+Requires Node.js 22+. This is a source install; the package is not published to npm.
 
 ```sh
 git clone https://github.com/avinash7509/archi-made-easy.git
 cd archi-made-easy
 npm ci
 npm run build
-npx playwright install chromium
-node dist/cli.js assets azure
-node dist/cli.js render examples/hybrid.json --out artifacts/demo
+npm run demo:quick
 ```
 
-Open `artifacts/demo/index.html`. The bundle includes as-is and proposed target models, native editable draw.io, selectable-text SVG, 300-DPI-scaled PNG, PDF, assessment, simulations, ADR, diff and architecture dossier. `--no-raster` works without a browser. Offline rendering works after setup and optional icon acquisition.
+Open **`artifacts/demo/index.html`**. The quick demo generates HTML, SVG, editable draw.io, and analysis reports without downloading a browser.
 
-Optional official icons:
+For PNG and PDF exports:
 
 ```sh
-node dist/cli.js assets aws
-node dist/cli.js assets gcp
+npx playwright install chromium
+npm run demo
 ```
 
-Icons are cached locally with checksums and terms, excluded from the published package. Unavailable vendor marks fall back to labeled generic cards. No vendor endorsement is implied.
+Optional official service icons: `node dist/cli.js assets azure` (also `aws` or `gcp`). Icons remain in a local cache under their vendor terms; missing icons use labeled generic cards.
 
-## Agent skill
+## Give your agent this prompt
 
-Use [SKILL.md](skills/archi-made-easy/SKILL.md) directly from this checkout, or install a self-contained skill package:
+```text
+Use Archi-Made-Easy to review this repository.
+Create an evidence-backed as-is architecture and a separate proposed target.
+Show public entry points, stateful dependencies, and failure boundaries.
+Simulate loss of the primary database. Preserve our MVP cost constraints.
+Deliver editable draw.io and an interactive HTML review.
+Label missing evidence rather than inventing deployed controls.
+```
+
+Use the [skill](skills/archi-made-easy/SKILL.md) directly from the checkout, or install a self-contained Codex skill:
 
 ```sh
 node scripts/install-skill.mjs
 ```
 
-The installer creates `~/.codex/skills/archi-made-easy` with its own runtime. It refuses to overwrite an existing installation. Other agent hosts can use the same folder through their skill installation mechanism; no host-specific paid service is required.
+The installer preserves existing installations. Other agents can read the same skill and invoke the local CLI; compatibility has not been benchmarked across every host. [More architecture-review prompts →](docs/prompts.md)
 
-## CLI
+## A model you can version. A diagram you can revise.
 
-```sh
-node dist/cli.js validate examples/hybrid.json
-node dist/cli.js simulate examples/hybrid.json --type node --target db
-node dist/cli.js simulate examples/hybrid.json --type traffic --rps 5000
-node dist/cli.js simulate examples/hybrid.json --type availability
-node dist/cli.js inspect examples/hybrid.json --id gateway
-node dist/cli.js discover /path/to/repository --out artifacts/inventory
-node dist/cli.js import artifacts/demo/as-is/architecture.drawio --out artifacts/edited
-node dist/cli.js diff artifacts/demo/source.casg.json artifacts/edited/candidate.casg.json
-node dist/cli.js benchmark benchmarks/manifest.json --out artifacts/benchmark
+```text
+Requirements / repository evidence
+                ↓ agent reasoning
+Canonical Architecture Semantic Graph (CASG)
+                ├── contextual assessment + evidence coverage
+                ├── failure scenarios + explicit assumptions
+                ├── preserved as-is → proposed target + diff
+                └── measured views → draw.io / SVG / PNG / PDF / HTML
 ```
 
-All commands emit JSON. `validate` exits 1 for known critical findings and 2 for invalid inputs. Findings do not prevent `render` from delivering an otherwise renderable candidate. Structural errors stop rendering because there is no well-defined graph to draw. No approval or waiver files are used.
+The [hybrid example](examples/hybrid.json) is a complete starting model. See the [CASG schema](schemas/casg.schema.json) and [CLI guide](docs/cli.md) for authoring and round-trip editing.
 
-`discover` is a bounded static inventory assistant, not a complete IaC interpreter. It inventories Terraform/Bicep declarations, structured CloudFormation/ARM/Kubernetes resources and JS/TS imports. An agent must resolve runtime relationships and ambiguous expressions. Documents/images are interpreted by the host agent, not by a bundled OCR/LLM service.
+## Where it fits today
 
-## Confidence and safety of interpretation
+**v0.1 is an early, working foundation.** It is useful for evidence-led architecture conversations, editable deliverables, and explicit dependency scenarios. It is not a cloud compliance certification or a substitute for production testing.
 
-- The source model is preserved. Remediation modifies a separate proposed model, never infrastructure.
-- Unknown evidence does not pass assessment. Coverage and score are separate.
-- Proposed controls are design requirements, not proof of implementation or successful tests.
-- Availability uses independent-domain assumptions and instant failover; it is not an SLA guarantee.
-- Traffic and latency are disclosed scenarios, not live load tests.
-- Browser export is not visual review. After actual inspection, record artifact-bound evidence with `review`.
-- The default tradeoff matrix is illustrative; substantive design choices require the agent's requirement-specific comparison.
+- Rules inspect declared model facts; static discovery does not fully interpret every IaC expression or prove deployed configuration.
+- Proposed controls are not verified implementations. Stateful replication and migration design still require architectural judgment.
+- Availability and latency estimates carry assumptions. Browser rendering is not perceptual review.
+- Provider catalogs are limited. Secondary UML/ERD views are generic, not full notation implementations.
+- The default tradeoff matrix is illustrative; the agent must ground real decisions in your requirements.
 
-## Verification
+[Full implementation status](docs/implementation-status.md) · [Confidence guidance](skills/archi-made-easy/references/analysis.md)
 
-```sh
-npm test
-node dist/cli.js benchmark benchmarks/manifest.json --out artifacts/benchmark
-npm audit
-npm pack --dry-run
-```
+## Help make architecture reviews better
 
-The 30-case fixture suite is not the planned 270-run cross-model benchmark. Blind comparisons with diagram-design and Archify remain unperformed. No superiority claim is made.
+The most useful contribution is **a small, anonymized architecture that exposes a wrong conclusion or an unreadable diagram**.
 
-Original code and guidance: Apache-2.0. See [NOTICE](NOTICE) for third-party references and icon terms.
+- [Report an architecture trap](https://github.com/avinash7509/archi-made-easy/issues/new?template=architecture-trap.yml): expected behavior, actual finding, and a minimal model.
+- [Report a rendering bug](https://github.com/avinash7509/archi-made-easy/issues/new?template=bug-report.yml): a model plus a screenshot beats a vague description.
+- Add a source-backed provider rule, a valid counterexample, or an example another architect can reuse.
+
+[Contribution guide](CONTRIBUTING.md) · [Public roadmap](ROADMAP.md) · [Discussions](https://github.com/avinash7509/archi-made-easy/discussions)
+
+If this helps your next design review, **star the repository** or share a sanitized example of what you built. Useful real-world cases will shape what ships next.
+
+## Evidence, not leaderboard claims
+
+Run `npm test` and `npm run benchmark:fixtures` to reproduce the checks. The suite includes 30 deterministic fixture cases; that is **not** the planned cross-model benchmark. Blind comparisons against diagram-design and Archify have not been run. No superiority claim is made.
+
+Inspired by lessons from [diagram-design](https://github.com/cathrynlavery/diagram-design), [Archify](https://github.com/tt-a1i/archify), and official cloud architecture guidance. Original implementation is Apache-2.0; see [NOTICE](NOTICE). Cloud trademarks and icons retain their respective terms.

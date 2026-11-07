@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Architecture ideas and examples
+    url: https://github.com/avinash7509/archi-made-easy/discussions
+    about: Discuss use cases and share sanitized examples.

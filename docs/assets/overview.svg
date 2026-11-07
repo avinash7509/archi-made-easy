@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500" viewBox="0 0 1200 500" role="img" aria-labelledby="title desc">
+<title id="title">Archi-Made-Easy — architecture you can question</title><desc id="desc">A conceptual workflow: preserve your system model, inspect risk, simulate dependencies, and export editable diagrams. This illustration is not a product screenshot.</desc>
+<defs><pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#dce4e9"/></pattern><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10" fill="#547066"/></marker></defs>
+<rect width="1200" height="500" rx="18" fill="#f7faf8"/><rect x="660" width="540" height="500" fill="url(#grid)"/>
+<g font-family="Arial,Helvetica,sans-serif"><text x="48" y="59" fill="#267355" font-size="15" font-weight="700" letter-spacing="2">ARCHI-MADE-EASY</text>
+<text x="48" y="134" fill="#142b24" font-size="48" font-weight="700">Architecture you</text><text x="48" y="190" fill="#142b24" font-size="48" font-weight="700">can question.</text>
+<text x="50" y="243" fill="#50645c" font-size="21">Understand the system. Expose the risks.</text><text x="50" y="275" fill="#50645c" font-size="21">Keep the diagram editable.</text>
+<rect x="48" y="320" width="170" height="39" rx="7" fill="#e2eee6"/><text x="65" y="345" font-size="15" fill="#22543d">AS-IS + TARGET</text><rect x="230" y="320" width="176" height="39" rx="7" fill="#e2eee6"/><text x="247" y="345" font-size="15" fill="#22543d">FAILURE SCENARIOS</text>
+<text x="48" y="439" font-size="16" fill="#50645c">Open source · Local runtime · draw.io / SVG / PNG / PDF / HTML</text>
+<rect x="708" y="64" width="438" height="354" rx="12" fill="#fff" stroke="#cddbd2"/><text x="733" y="99" font-size="13" fill="#607369" letter-spacing="1">ILLUSTRATIVE REVIEW WORKFLOW</text>
+<path d="M817 184V236M1032 184V236M897 276H952" fill="none" stroke="#547066" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="737" y="124" width="160" height="60" rx="7" fill="#f0f7f2" stroke="#94b09c"/><text x="761" y="160" font-size="17" fill="#213e2d">System model</text>
+<rect x="952" y="124" width="160" height="60" rx="7" fill="#f0f7f2" stroke="#94b09c"/><text x="980" y="160" font-size="17" fill="#213e2d">Design intent</text>
+<rect x="737" y="236" width="160" height="80" rx="7" fill="#fff4e7" stroke="#d79b4d"/><text x="757" y="268" font-size="17" fill="#764c17">Inspect risks</text><text x="757" y="293" font-size="13" fill="#876537">Evidence + unknowns</text>
+<rect x="952" y="236" width="160" height="80" rx="7" fill="#e8f2ed" stroke="#6b9d7d"/><text x="968" y="268" font-size="17" fill="#213e2d">Propose a target</text><text x="968" y="293" font-size="13" fill="#50645c">Preserve the original</text>
+<text x="738" y="368" font-size="15" fill="#50645c">Simulate dependencies. Export the review.</text></g></svg>

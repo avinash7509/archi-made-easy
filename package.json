@@ -15,7 +15,10 @@
     "test": "npm run build && node --test test/*.test.mjs",
     "demo": "node dist/cli.js render examples/hybrid.json --out artifacts/demo",
     "check": "npm test",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "demo:quick": "node dist/cli.js render examples/hybrid.json --out artifacts/demo --no-raster",
+    "demo:public": "npm run build && node scripts/build-public-demo.mjs",
+    "benchmark:fixtures": "node dist/cli.js benchmark benchmarks/manifest.json --out artifacts/benchmark"
   },
   "files": [
     "dist",
@@ -48,5 +51,17 @@
   "bugs": {
     "url": "https://github.com/avinash7509/archi-made-easy/issues"
   },
-  "homepage": "https://github.com/avinash7509/archi-made-easy#readme"
+  "homepage": "https://avinash7509.github.io/archi-made-easy/",
+  "keywords": [
+    "architecture",
+    "architecture-diagrams",
+    "agent-skills",
+    "drawio",
+    "cloud-architecture",
+    "well-architected",
+    "system-design",
+    "c4-model",
+    "blast-radius",
+    "architecture-as-code"
+  ]
 }

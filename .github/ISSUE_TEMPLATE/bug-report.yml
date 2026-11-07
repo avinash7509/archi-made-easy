@@ -1,0 +1,22 @@
+name: Rendering or runtime bug
+description: Report a reproducible diagram, export, import, or CLI issue.
+title: "[Bug] "
+body:
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal model and command
+      description: Include expected and actual behavior. Remove secrets and personal data.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Commit/version, OS and Node.js version.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshot or diagnostic output
