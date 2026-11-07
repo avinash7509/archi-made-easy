@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "databricks-lakehouse",
+  "title": "Databricks Lakehouse",
+  "mode": "as-is",
+  "components": [
+    {
+      "id": "entry",
+      "label": "Entry",
+      "kind": "database",
+      "provider": "databricks"
+    },
+    {
+      "id": "state",
+      "label": "State",
+      "kind": "database",
+      "stateful": true,
+      "controls": {
+        "privateAccess": true,
+        "encryptionAtRest": true
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "read",
+      "from": "entry",
+      "to": "state",
+      "kind": "sync"
+    }
+  ],
+  "evidence": []
+}

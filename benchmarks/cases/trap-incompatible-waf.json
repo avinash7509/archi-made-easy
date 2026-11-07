@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "trap-incompatible-waf",
+  "title": "Trap Incompatible Waf",
+  "mode": "as-is",
+  "components": [
+    {
+      "id": "api",
+      "label": "Api",
+      "kind": "service",
+      "provider": "aws",
+      "service": "s3",
+      "controls": {
+        "edgeWaf": true,
+        "edgeWafProduct": "aws-wafv2"
+      }
+    }
+  ],
+  "relationships": [],
+  "evidence": []
+}

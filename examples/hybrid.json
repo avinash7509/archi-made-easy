@@ -1,0 +1,251 @@
+{
+  "schemaVersion": 1,
+  "id": "hybrid-platform",
+  "title": "Hybrid commerce platform",
+  "description": "Enterprise-critical order processing across cloud and enterprise integrations. Reference example, not a live inventory.",
+  "mode": "as-is",
+  "profile": "enterprise-critical",
+  "components": [
+    {
+      "id": "users",
+      "label": "Customers & partners",
+      "kind": "actor",
+      "evidence": [
+        "brief"
+      ]
+    },
+    {
+      "id": "cloud",
+      "label": "Azure production",
+      "kind": "boundary",
+      "provider": "azure",
+      "evidence": [
+        "brief"
+      ]
+    },
+    {
+      "id": "gateway",
+      "label": "Public API ingress",
+      "kind": "api",
+      "provider": "azure",
+      "service": "application-gateway",
+      "parent": "cloud",
+      "public": true,
+      "tier": 1,
+      "availability": 0.9995,
+      "controls": {
+        "edgeWaf": false,
+        "ddos": true,
+        "authentication": true,
+        "tls": true,
+        "originRestricted": false
+      },
+      "evidence": [
+        "brief"
+      ]
+    },
+    {
+      "id": "orders",
+      "label": "Order orchestration",
+      "kind": "service",
+      "provider": "azure",
+      "service": "aks",
+      "parent": "cloud",
+      "tier": 1,
+      "az": "zone-1",
+      "region": "eastus",
+      "availability": 0.999,
+      "controls": {
+        "redundancy": false,
+        "workloadIdentity": true,
+        "tls": true,
+        "observability": true,
+        "boundedRetries": false
+      },
+      "evidence": [
+        "brief"
+      ]
+    },
+    {
+      "id": "queue",
+      "label": "Order event broker",
+      "kind": "queue",
+      "provider": "azure",
+      "service": "service-bus",
+      "parent": "cloud",
+      "availability": 0.999,
+      "capacityRps": 800,
+      "buffer": 10000,
+      "retryFactor": 1.1,
+      "scaleDelaySeconds": 60,
+      "controls": {
+        "poisonHandling": false,
+        "tls": true
+      },
+      "evidence": [
+        "brief"
+      ]
+    },
+    {
+      "id": "db",
+      "label": "Order database",
+      "kind": "database",
+      "provider": "azure",
+      "service": "sql-database",
+      "parent": "cloud",
+      "stateful": true,
+      "public": true,
+      "tier": 1,
+      "rtoSeconds": 600,
+      "rpoSeconds": 60,
+      "availability": 0.999,
+      "controls": {
+        "privateAccess": false,
+        "encryptionAtRest": true
+      },
+      "evidence": [
+        "brief"
+      ]
+    },
+    {
+      "id": "enterprise",
+      "label": "Enterprise integrations",
+      "kind": "boundary",
+      "evidence": [
+        "brief"
+      ]
+    },
+    {
+      "id": "mule",
+      "label": "MuleSoft integration API",
+      "kind": "service",
+      "provider": "mulesoft",
+      "parent": "enterprise",
+      "availability": 0.999,
+      "controls": {
+        "tls": true
+      },
+      "evidence": [
+        "brief"
+      ]
+    },
+    {
+      "id": "sap",
+      "label": "SAP order fulfilment",
+      "kind": "service",
+      "provider": "sap",
+      "parent": "enterprise",
+      "stateful": true,
+      "availability": 0.999,
+      "controls": {
+        "tls": true,
+        "privateAccess": true
+      },
+      "evidence": [
+        "brief"
+      ]
+    },
+    {
+      "id": "lake",
+      "label": "Databricks analytics",
+      "kind": "service",
+      "provider": "databricks",
+      "stateful": true,
+      "availability": 0.999,
+      "controls": {
+        "privateAccess": true,
+        "encryptionAtRest": true
+      },
+      "evidence": [
+        "brief"
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "flow-0",
+      "from": "users",
+      "to": "gateway",
+      "kind": "sync",
+      "label": "HTTPS",
+      "dependency": "required"
+    },
+    {
+      "id": "flow-1",
+      "from": "gateway",
+      "to": "orders",
+      "kind": "sync",
+      "label": "Submit order",
+      "dependency": "required"
+    },
+    {
+      "id": "flow-2",
+      "from": "orders",
+      "to": "db",
+      "kind": "sync",
+      "label": "Persist",
+      "dependency": "required"
+    },
+    {
+      "id": "flow-3",
+      "from": "orders",
+      "to": "queue",
+      "kind": "async",
+      "label": "Publish event",
+      "dependency": "required"
+    },
+    {
+      "id": "flow-4",
+      "from": "queue",
+      "to": "mule",
+      "kind": "async",
+      "label": "Deliver",
+      "dependency": "required"
+    },
+    {
+      "id": "flow-5",
+      "from": "mule",
+      "to": "sap",
+      "kind": "sync",
+      "label": "Fulfil",
+      "dependency": "required"
+    },
+    {
+      "id": "flow-6",
+      "from": "queue",
+      "to": "lake",
+      "kind": "async",
+      "label": "Analytics",
+      "dependency": "optional"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "brief",
+      "kind": "user-specified",
+      "source": "example:hybrid-commerce",
+      "conditions": "Synthetic example based on a supplied brief, not observed infrastructure."
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "order-capability",
+      "label": "Place and fulfil an order",
+      "entrypoints": [
+        "gateway"
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "deployment",
+      "label": "Cloud and enterprise deployment",
+      "type": "deployment"
+    },
+    {
+      "id": "sequence",
+      "label": "Order interactions (declared order)",
+      "type": "sequence"
+    }
+  ]
+}

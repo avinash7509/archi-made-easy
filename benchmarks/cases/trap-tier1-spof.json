@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "trap-tier1-spof",
+  "title": "Trap Tier1 Spof",
+  "mode": "as-is",
+  "components": [
+    {
+      "id": "api",
+      "label": "Api",
+      "kind": "service",
+      "tier": 1,
+      "controls": {
+        "redundancy": false
+      }
+    }
+  ],
+  "relationships": [],
+  "evidence": []
+}

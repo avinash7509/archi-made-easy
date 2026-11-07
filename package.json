@@ -1,0 +1,52 @@
+{
+  "name": "archi-made-easy",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Evidence-backed architecture reasoning and editable diagrams",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "archi-made-easy": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "demo": "node dist/cli.js render examples/hybrid.json --out artifacts/demo",
+    "check": "npm test",
+    "prepack": "npm run build"
+  },
+  "files": [
+    "dist",
+    "schemas",
+    "catalogs",
+    "skills",
+    "examples",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "scripts",
+    "docs"
+  ],
+  "dependencies": {
+    "ajv": "8.20.0",
+    "elkjs": "0.10.0",
+    "fast-xml-parser": "5.12.0",
+    "fflate": "0.8.3",
+    "playwright": "1.56.1",
+    "typescript": "5.9.3",
+    "yaml": "2.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/avinash7509/archi-made-easy.git"
+  },
+  "bugs": {
+    "url": "https://github.com/avinash7509/archi-made-easy/issues"
+  },
+  "homepage": "https://github.com/avinash7509/archi-made-easy#readme"
+}

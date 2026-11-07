@@ -1,0 +1,21 @@
+{
+ "$schema":"https://json-schema.org/draft/2020-12/schema", "$id":"https://archi-made-easy.local/casg/v1",
+ "type":"object","additionalProperties":false,"required":["schemaVersion","id","title","mode","components","relationships","evidence"],
+ "properties":{
+  "schemaVersion":{"const":1},"id":{"$ref":"#/$defs/id"},"title":{"type":"string","minLength":1},"mode":{"enum":["as-is","target"]},"description":{"type":"string"},"profile":{"enum":["mvp","standard-production","enterprise-critical"]},
+  "components":{"type":"array","items":{"$ref":"#/$defs/component"}},
+  "relationships":{"type":"array","items":{"$ref":"#/$defs/edge"}},
+  "evidence":{"type":"array","items":{"type":"object","additionalProperties":false,"required":["id","kind","source"],"properties":{"id":{"$ref":"#/$defs/id"},"kind":{"enum":["observed","user-specified","vendor-published","inferred","proposed"]},"source":{"type":"string","minLength":1},"revision":{"type":"string"},"retrievedAt":{"type":"string"},"conditions":{"type":"string"}}}},
+  "assumptions":{"type":"array","items":{"type":"string"}},
+  "constraints":{"type":"object","additionalProperties":false,"properties":{"allowedRegions":{"type":"array","items":{"type":"string"}},"allowProposals":{"type":"boolean"},"forbiddenControls":{"type":"array","items":{"type":"string"}},"targetAvailability":{"type":"number","minimum":0,"maximum":1}}},
+  "views":{"type":"array","items":{"type":"object","additionalProperties":false,"required":["id","label","type"],"properties":{"id":{"$ref":"#/$defs/id"},"label":{"type":"string"},"type":{"enum":["context","container","component","deployment","network","sequence","dataflow","capability","erd","class","state","activity"]},"nodes":{"type":"array","items":{"$ref":"#/$defs/id"}}}}},
+  "capabilities":{"type":"array","items":{"type":"object","additionalProperties":false,"required":["id","label","entrypoints"],"properties":{"id":{"$ref":"#/$defs/id"},"label":{"type":"string"},"entrypoints":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/id"}}}}}
+ },
+ "$defs":{
+ "id":{"type":"string","pattern":"^[A-Za-z][A-Za-z0-9_.:-]*$"},"point":{"type":"object","required":["x","y"],"additionalProperties":false,"properties":{"x":{"type":"number"},"y":{"type":"number"}}},
+ "component":{"type":"object","additionalProperties":false,"required":["id","label","kind"],"properties":{
+ "id":{"$ref":"#/$defs/id"},"label":{"type":"string","minLength":1},"kind":{"type":"string","minLength":1},"provider":{"type":"string"},"service":{"type":"string"},"parent":{"$ref":"#/$defs/id"},"region":{"type":"string"},"az":{"type":"string"},"public":{"type":"boolean"},"tier":{"type":"integer","minimum":1,"maximum":3},"stateful":{"type":"boolean"},"controls":{"type":"object","additionalProperties":{"type":["boolean","number","string"]}},"evidence":{"type":"array","items":{"$ref":"#/$defs/id"}},"availability":{"type":"number","minimum":0,"maximum":1},"failureDomain":{"type":"string"},"capacityRps":{"type":"number","exclusiveMinimum":0},"buffer":{"type":"number","minimum":0},"retryFactor":{"type":"number","minimum":1},"scaleDelaySeconds":{"type":"number","minimum":0},"rtoSeconds":{"type":"number","minimum":0},"rpoSeconds":{"type":"number","minimum":0},"latencyMs":{"type":"array","minItems":1,"items":{"type":"number","minimum":0}},"position":{"$ref":"#/$defs/point"},"size":{"type":"object","additionalProperties":false,"required":["width","height"],"properties":{"width":{"type":"number","minimum":80},"height":{"type":"number","minimum":50}}},"attributes":{"type":"array","items":{"type":"object","additionalProperties":false,"required":["name","type"],"properties":{"name":{"type":"string"},"type":{"type":"string"},"key":{"type":"string"}}}}
+ }},
+ "edge":{"type":"object","additionalProperties":false,"required":["id","from","to","kind"],"properties":{"id":{"$ref":"#/$defs/id"},"from":{"$ref":"#/$defs/id"},"to":{"$ref":"#/$defs/id"},"label":{"type":"string"},"kind":{"enum":["sync","async","replication","control","telemetry"]},"dependency":{"enum":["required","optional","fallback","quorum"]},"group":{"type":"string"},"quorum":{"type":"integer","minimum":1},"evidence":{"type":"array","items":{"$ref":"#/$defs/id"}},"waypoints":{"type":"array","items":{"$ref":"#/$defs/point"}}}}
+ }
+}

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "trap-agent-permissions",
+  "title": "Trap Agent Permissions",
+  "mode": "as-is",
+  "components": [
+    {
+      "id": "agent",
+      "label": "Agent",
+      "kind": "agent",
+      "controls": {
+        "toolBoundaries": false
+      }
+    }
+  ],
+  "relationships": [],
+  "evidence": []
+}

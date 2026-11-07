@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "trap-prefix-list",
+  "title": "Trap Prefix List",
+  "mode": "as-is",
+  "components": [
+    {
+      "id": "origin",
+      "label": "Origin",
+      "kind": "service",
+      "provider": "aws",
+      "controls": {
+        "originRestricted": true,
+        "restrictionMethod": "prefix-list-only"
+      }
+    }
+  ],
+  "relationships": [],
+  "evidence": []
+}

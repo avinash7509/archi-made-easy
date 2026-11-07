@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "counterexample-anonymous-site",
+  "title": "Counterexample Anonymous Site",
+  "mode": "as-is",
+  "components": [
+    {
+      "id": "public-web",
+      "label": "Public Web",
+      "kind": "service",
+      "public": true,
+      "controls": {
+        "anonymousAllowed": true,
+        "authentication": false
+      }
+    }
+  ],
+  "relationships": [],
+  "evidence": []
+}

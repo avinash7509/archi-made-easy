@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "azure-data-platform",
+  "title": "Azure Data Platform",
+  "mode": "as-is",
+  "components": [
+    {
+      "id": "service-0",
+      "label": "Service 0",
+      "kind": "broker",
+      "provider": "azure",
+      "public": true,
+      "stateful": false
+    },
+    {
+      "id": "service-1",
+      "label": "Service 1",
+      "kind": "service",
+      "provider": "azure",
+      "public": false,
+      "stateful": false
+    },
+    {
+      "id": "service-2",
+      "label": "Service 2",
+      "kind": "database",
+      "provider": "azure",
+      "public": false,
+      "stateful": true
+    },
+    {
+      "id": "service-3",
+      "label": "Service 3",
+      "kind": "model",
+      "provider": "azure",
+      "public": false,
+      "stateful": false
+    },
+    {
+      "id": "service-4",
+      "label": "Service 4",
+      "kind": "service",
+      "provider": "azure",
+      "public": false,
+      "stateful": false
+    }
+  ],
+  "relationships": [
+    {
+      "id": "edge-0",
+      "from": "service-0",
+      "to": "service-1",
+      "kind": "sync"
+    },
+    {
+      "id": "edge-1",
+      "from": "service-1",
+      "to": "service-2",
+      "kind": "sync"
+    },
+    {
+      "id": "edge-2",
+      "from": "service-2",
+      "to": "service-3",
+      "kind": "sync"
+    },
+    {
+      "id": "edge-3",
+      "from": "service-3",
+      "to": "service-4",
+      "kind": "sync"
+    }
+  ],
+  "evidence": []
+}

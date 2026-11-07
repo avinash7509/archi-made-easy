@@ -1,0 +1,4 @@
+interface:
+  display_name: "Archi-Made-Easy"
+  short_description: "Evidence-backed architecture design and diagrams"
+  default_prompt: "Use $archi-made-easy to assess this system and deliver editable architecture diagrams with a proposed improved target."

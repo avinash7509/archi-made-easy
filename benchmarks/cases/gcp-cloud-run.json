@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "gcp-cloud-run",
+  "title": "Gcp Cloud Run",
+  "mode": "as-is",
+  "components": [
+    {
+      "id": "entry",
+      "label": "Entry",
+      "kind": "service",
+      "provider": "gcp"
+    },
+    {
+      "id": "state",
+      "label": "State",
+      "kind": "database",
+      "stateful": true,
+      "controls": {
+        "privateAccess": true,
+        "encryptionAtRest": true
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "read",
+      "from": "entry",
+      "to": "state",
+      "kind": "sync"
+    }
+  ],
+  "evidence": []
+}

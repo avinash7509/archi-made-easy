@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "trap-origin-bypass",
+  "title": "Trap Origin Bypass",
+  "mode": "as-is",
+  "components": [
+    {
+      "id": "api",
+      "label": "Api",
+      "kind": "api",
+      "public": true,
+      "controls": {
+        "edgeWaf": true,
+        "originRestricted": false
+      }
+    }
+  ],
+  "relationships": [],
+  "evidence": []
+}

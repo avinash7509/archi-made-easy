@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "trap-missing-waf",
+  "title": "Trap Missing Waf",
+  "mode": "as-is",
+  "components": [
+    {
+      "id": "api",
+      "label": "Api",
+      "kind": "api",
+      "public": true,
+      "controls": {
+        "edgeWaf": false
+      }
+    }
+  ],
+  "relationships": [],
+  "evidence": []
+}

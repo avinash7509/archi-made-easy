@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "servicenow-mid",
+  "title": "Servicenow Mid",
+  "mode": "as-is",
+  "components": [
+    {
+      "id": "entry",
+      "label": "Entry",
+      "kind": "service",
+      "provider": "servicenow"
+    },
+    {
+      "id": "state",
+      "label": "State",
+      "kind": "database",
+      "stateful": true,
+      "controls": {
+        "privateAccess": true,
+        "encryptionAtRest": true
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "read",
+      "from": "entry",
+      "to": "state",
+      "kind": "sync"
+    }
+  ],
+  "evidence": []
+}

@@ -1,0 +1,240 @@
+{
+  "version": 1,
+  "kind": "fixtures-not-agent-results",
+  "cases": [
+    {
+      "id": "gcp-agent-gateway",
+      "file": "cases/gcp-agent-gateway.json",
+      "category": "reference-inspired",
+      "expectedFailures": [],
+      "expectedPasses": []
+    },
+    {
+      "id": "aws-eks-estate",
+      "file": "cases/aws-eks-estate.json",
+      "category": "reference-inspired",
+      "expectedFailures": [],
+      "expectedPasses": []
+    },
+    {
+      "id": "aws-iot-events",
+      "file": "cases/aws-iot-events.json",
+      "category": "reference-inspired",
+      "expectedFailures": [],
+      "expectedPasses": []
+    },
+    {
+      "id": "azure-private-aks",
+      "file": "cases/azure-private-aks.json",
+      "category": "reference-inspired",
+      "expectedFailures": [],
+      "expectedPasses": []
+    },
+    {
+      "id": "azure-hybrid-monitoring",
+      "file": "cases/azure-hybrid-monitoring.json",
+      "category": "reference-inspired",
+      "expectedFailures": [],
+      "expectedPasses": []
+    },
+    {
+      "id": "azure-data-platform",
+      "file": "cases/azure-data-platform.json",
+      "category": "reference-inspired",
+      "expectedFailures": [],
+      "expectedPasses": []
+    },
+    {
+      "id": "aws-serverless",
+      "file": "cases/aws-serverless.json",
+      "category": "enterprise",
+      "expectedFailures": [],
+      "expectedPasses": []
+    },
+    {
+      "id": "azure-app-service",
+      "file": "cases/azure-app-service.json",
+      "category": "enterprise",
+      "expectedFailures": [],
+      "expectedPasses": []
+    },
+    {
+      "id": "gcp-cloud-run",
+      "file": "cases/gcp-cloud-run.json",
+      "category": "enterprise",
+      "expectedFailures": [],
+      "expectedPasses": []
+    },
+    {
+      "id": "kubernetes-ha",
+      "file": "cases/kubernetes-ha.json",
+      "category": "enterprise",
+      "expectedFailures": [],
+      "expectedPasses": []
+    },
+    {
+      "id": "hybrid-sap",
+      "file": "cases/hybrid-sap.json",
+      "category": "enterprise",
+      "expectedFailures": [],
+      "expectedPasses": []
+    },
+    {
+      "id": "mulesoft-api",
+      "file": "cases/mulesoft-api.json",
+      "category": "enterprise",
+      "expectedFailures": [],
+      "expectedPasses": []
+    },
+    {
+      "id": "databricks-lakehouse",
+      "file": "cases/databricks-lakehouse.json",
+      "category": "enterprise",
+      "expectedFailures": [],
+      "expectedPasses": []
+    },
+    {
+      "id": "servicenow-mid",
+      "file": "cases/servicenow-mid.json",
+      "category": "enterprise",
+      "expectedFailures": [],
+      "expectedPasses": []
+    },
+    {
+      "id": "agentic-rag",
+      "file": "cases/agentic-rag.json",
+      "category": "enterprise",
+      "expectedFailures": [],
+      "expectedPasses": []
+    },
+    {
+      "id": "private-vector",
+      "file": "cases/private-vector.json",
+      "category": "enterprise",
+      "expectedFailures": [],
+      "expectedPasses": []
+    },
+    {
+      "id": "enterprise-capabilities",
+      "file": "cases/enterprise-capabilities.json",
+      "category": "enterprise",
+      "expectedFailures": [],
+      "expectedPasses": []
+    },
+    {
+      "id": "multi-cloud-dr",
+      "file": "cases/multi-cloud-dr.json",
+      "category": "enterprise",
+      "expectedFailures": [],
+      "expectedPasses": []
+    },
+    {
+      "id": "trap-missing-waf",
+      "file": "cases/trap-missing-waf.json",
+      "category": "trap",
+      "expectedFailures": [
+        "SEC-EDGE"
+      ],
+      "expectedPasses": []
+    },
+    {
+      "id": "trap-origin-bypass",
+      "file": "cases/trap-origin-bypass.json",
+      "category": "trap",
+      "expectedFailures": [
+        "SEC-ORIGIN"
+      ],
+      "expectedPasses": []
+    },
+    {
+      "id": "trap-tier1-spof",
+      "file": "cases/trap-tier1-spof.json",
+      "category": "trap",
+      "expectedFailures": [
+        "REL-REDUNDANCY"
+      ],
+      "expectedPasses": []
+    },
+    {
+      "id": "trap-public-database",
+      "file": "cases/trap-public-database.json",
+      "category": "trap",
+      "expectedFailures": [
+        "SEC-PUBLIC-STORE"
+      ],
+      "expectedPasses": []
+    },
+    {
+      "id": "trap-recovery-chain",
+      "file": "cases/trap-recovery-chain.json",
+      "category": "trap",
+      "expectedFailures": [
+        "REL-rtoSeconds"
+      ],
+      "expectedPasses": []
+    },
+    {
+      "id": "trap-poison-messages",
+      "file": "cases/trap-poison-messages.json",
+      "category": "trap",
+      "expectedFailures": [
+        "REL-POISON"
+      ],
+      "expectedPasses": []
+    },
+    {
+      "id": "trap-agent-permissions",
+      "file": "cases/trap-agent-permissions.json",
+      "category": "trap",
+      "expectedFailures": [
+        "AI-TOOLS"
+      ],
+      "expectedPasses": []
+    },
+    {
+      "id": "trap-prefix-list",
+      "file": "cases/trap-prefix-list.json",
+      "category": "trap",
+      "expectedFailures": [
+        "SEC-ORIGIN-DISTRIBUTION"
+      ],
+      "expectedPasses": []
+    },
+    {
+      "id": "trap-incompatible-waf",
+      "file": "cases/trap-incompatible-waf.json",
+      "category": "trap",
+      "expectedFailures": [
+        "SEC-EDGE-COMPAT"
+      ],
+      "expectedPasses": []
+    },
+    {
+      "id": "counterexample-private-api",
+      "file": "cases/counterexample-private-api.json",
+      "category": "counterexample",
+      "expectedFailures": [],
+      "expectedPasses": [
+        "SEC-EDGE"
+      ]
+    },
+    {
+      "id": "counterexample-mvp",
+      "file": "cases/counterexample-mvp.json",
+      "category": "counterexample",
+      "expectedFailures": [],
+      "expectedPasses": [
+        "REL-REDUNDANCY"
+      ]
+    },
+    {
+      "id": "counterexample-anonymous-site",
+      "file": "cases/counterexample-anonymous-site.json",
+      "category": "counterexample",
+      "expectedFailures": [],
+      "expectedPasses": [
+        "SEC-AUTH"
+      ]
+    }
+  ]
+}

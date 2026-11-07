@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "kubernetes-ha",
+  "title": "Kubernetes Ha",
+  "mode": "as-is",
+  "components": [
+    {
+      "id": "entry",
+      "label": "Entry",
+      "kind": "compute",
+      "provider": "kubernetes"
+    },
+    {
+      "id": "state",
+      "label": "State",
+      "kind": "database",
+      "stateful": true,
+      "controls": {
+        "privateAccess": true,
+        "encryptionAtRest": true
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "read",
+      "from": "entry",
+      "to": "state",
+      "kind": "sync"
+    }
+  ],
+  "evidence": []
+}

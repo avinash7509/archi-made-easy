@@ -1,0 +1,14 @@
+Archi-Made-Easy
+Copyright 2026 Archi-Made-Easy contributors
+
+Original implementation licensed under Apache-2.0.
+Architecture design research referenced cathrynlavery/diagram-design (MIT)
+and tt-a1i/archify (Apache-2.0/MIT). No implementation code copied.
+Google skills checklist references are pinned in catalogs/google-checklists.json;
+upstream Apache-2.0 text is linked, not bundled.
+
+Official cloud icons are acquired into a local cache and excluded from the
+distributed package. Vendor trademarks and icon usage terms remain applicable;
+they are not relicensed under Apache-2.0. No vendor endorsement is implied.
+
+Runtime third-party dependencies retain their own licenses in their packages.

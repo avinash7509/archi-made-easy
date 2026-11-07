@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "trap-public-database",
+  "title": "Trap Public Database",
+  "mode": "as-is",
+  "components": [
+    {
+      "id": "db",
+      "label": "Db",
+      "kind": "database",
+      "stateful": true,
+      "public": true,
+      "controls": {
+        "privateAccess": false
+      }
+    }
+  ],
+  "relationships": [],
+  "evidence": []
+}

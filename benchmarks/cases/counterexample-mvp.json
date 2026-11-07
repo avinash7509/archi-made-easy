@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "counterexample-mvp",
+  "title": "Counterexample Mvp",
+  "mode": "as-is",
+  "components": [
+    {
+      "id": "mvp",
+      "label": "Mvp",
+      "kind": "service",
+      "tier": 1,
+      "controls": {
+        "redundancy": false
+      }
+    }
+  ],
+  "relationships": [],
+  "evidence": [],
+  "profile": "mvp"
+}

@@ -1,0 +1,43 @@
+import {mkdir,writeFile} from 'node:fs/promises';
+import {resolve,join} from 'node:path';
+import {chromium} from 'playwright';
+import {layout,views,type Scene} from './layout.js';
+import {svg,html} from './render.js';
+import {toDrawio} from './drawio.js';
+import {assess,remediate} from './assessment.js';
+import {defaultSimulations} from './simulation.js';
+import {structural} from './validation.js';
+import {hash,diff,type CASG} from './model.js';
+import {catalogFacts} from './catalog.js';
+export async function writeJSON(path:string,value:unknown){await writeFile(path,JSON.stringify(value,null,2)+'\n');}
+export function tradeoffs(m:CASG){const enterprise=m.profile==='enterprise-critical';return {status:'estimated-scenario',method:'Heuristic ordinal comparison (1–5); not measured TCO or latency.',weights:{reliability:2,security:2,cost:1,performance:1,operations:1,sustainability:1,cognitiveLoad:2,lockIn:1},options:[{id:'modular',name:'Modular application with managed state',scores:{reliability:3,security:4,cost:4,performance:4,operations:4,sustainability:3,cognitiveLoad:5,lockIn:3}},{id:'event-driven',name:'Event-driven services with managed state',scores:{reliability:4,security:4,cost:3,performance:3,operations:3,sustainability:4,cognitiveLoad:2,lockIn:2}}],selected:enterprise?'event-driven':'modular',rationale:enterprise?'Illustrative resilience-oriented alternative; domain boundaries and delivery guarantees require validation.':'Prefer simpler operations absent requirements justifying distribution.',missing:['Traffic and payload measurements','Team experience','Provider region pricing','Consistency and latency budgets'],constraints:m.constraints??{}};}
+export async function deliver(m:CASG,out:string,options:{repoRoot?:string;raster?:boolean}={}){
+ const evidence=structural(m,options.repoRoot);if(!evidence.passed)throw new Error(`Invalid CASG: ${evidence.errors.join('; ')}`);
+ await mkdir(out,{recursive:true});const sourceHash=hash(m);const target=remediate(m);const models=m.mode==='as-is'?[m,target.candidate]:[target.candidate];
+ const bundles:{model:CASG;scenes:Scene[]}[]=[];const files:string[]=[];
+ for(const model of models){const scenes=[];for(const v of views(model)){let scene=await layout(model,v);if(!model.components.some(n=>n.position))for(let repair=1;repair<=3&&scene.diagnostics.some(d=>d.startsWith("node-overlap:")||d.startsWith("route-through-node:"));repair++){const next=await layout(model,v,1+repair*.4);if(next.diagnostics.length<scene.diagnostics.length)scene=next;}scenes.push(scene);}bundles.push({model,scenes});
+  const dir=join(out,model.mode);await mkdir(dir,{recursive:true});await writeJSON(join(dir,'architecture.casg.json'),model);await writeJSON(join(dir,'WAF-REPORT.json'),assess(model));await writeJSON(join(dir,'SIMULATIONS.json'),defaultSimulations(model));await writeJSON(join(dir,'scenes.json'),scenes);
+  await writeFile(join(dir,'architecture.drawio'),toDrawio(model,scenes));files.push(join(dir,'architecture.drawio'));
+  for(const scene of scenes){const path=join(dir,`${scene.id}.svg`);await writeFile(path,svg(model,scene));files.push(path);}
+ }
+ const htmlPath=join(out,'index.html');await writeFile(htmlPath,html(bundles));files.push(htmlPath);
+ await writeJSON(join(out,'provider-facts.json'),catalogFacts(m));await writeJSON(join(out,'source.casg.json'),m);await writeJSON(join(out,'WAF-REPORT.json'),assess(target.candidate));await writeJSON(join(out,'remediation-diff.json'),diff(m,target.candidate));await writeJSON(join(out,'remediation-backlog.json'),target.changes);
+ const alternatives=tradeoffs(m);await writeJSON(join(out,'tradeoffs.json'),alternatives);
+ const adr={id:'ADR-001',status:'proposed',title:'Select a workload-appropriate architecture',context:m.description??m.title,options:alternatives.options,decision:alternatives.selected,rationale:alternatives.rationale,tradeoffs:alternatives.missing,evidence:m.evidence.map(e=>e.id)};
+ await mkdir(join(out,'adrs'),{recursive:true});await writeJSON(join(out,'adrs','ADR-001.json'),adr);await writeFile(join(out,'adrs','ADR-001.md'),`# ADR-001: ${adr.title}\n\nStatus: proposed\n\n${adr.context}\n\nDecision: ${adr.decision}\n\n${adr.rationale}\n\n## Inputs still required\n\n${adr.tradeoffs.map(t=>'- '+t).join('\n')}\n`);
+ const exportStatus:{raster:string;pdf:string;visualReview:string;errors:string[];browserChecks?:unknown;textGeometry?:unknown[]}={raster:'not-requested',pdf:'not-requested',visualReview:'not-performed',errors:[],textGeometry:[]};
+ if(options.raster!==false){let browser;try{browser=await chromium.launch({headless:true});const page=await browser.newPage({viewport:{width:1600,height:1000}});const browserErrors:string[]=[];page.on('pageerror',e=>browserErrors.push(e.message));
+  for(const {model,scenes} of bundles)for(const scene of scenes){const svgDocument=svg(model,scene);await page.setContent(`<html><style>body{margin:0}svg{display:block}</style>${svgDocument}</html>`);await page.evaluate(()=>document.fonts.ready);
+   const overflow=await page.evaluate(()=>Array.from(document.querySelectorAll('g.node')).flatMap(g=>{const rect=g.querySelector('rect');if(!rect)return [];const bounds=rect.getBBox();return Array.from(g.querySelectorAll('text')).filter(t=>{const b=t.getBBox();return b.x<bounds.x||b.x+b.width>bounds.x+bounds.width||b.y+b.height>bounds.y+bounds.height;}).map(t=>({component:g.getAttribute('data-id'),text:t.textContent}));}));exportStatus.textGeometry!.push({mode:model.mode,view:scene.id,overflow});
+   const width=scene.width,height=scene.height+195;await page.setViewportSize({width:Math.ceil(width),height:Math.ceil(height)});
+   // CSS pixel to print-inch contract: 96px = 1 inch; screenshot at 300/96.
+   const context=await browser.newContext({viewport:{width:Math.ceil(width),height:Math.ceil(height)},deviceScaleFactor:300/96});const raster=await context.newPage();await raster.setContent(`<html><style>body{margin:0}svg{display:block}</style>${svgDocument}</html>`);await raster.evaluate(()=>document.fonts.ready);const png=join(out,model.mode,`${scene.id}.png`);await raster.screenshot({path:png,fullPage:true});await context.close();files.push(png);
+   const pdf=join(out,model.mode,`${scene.id}.pdf`);await page.pdf({path:pdf,width:`${width/96}in`,height:`${height/96}in`,printBackground:true,margin:{top:0,right:0,bottom:0,left:0}});files.push(pdf);
+  }
+  await page.setViewportSize({width:1600,height:1000});await page.goto(new URL('file:///'+resolve(htmlPath).replaceAll('\\','/')).href);await page.locator('#drawing svg').waitFor();await page.screenshot({path:join(out,'preview.png')});exportStatus.browserChecks={passed:browserErrors.length===0,errors:browserErrors};exportStatus.raster='generated';exportStatus.pdf='generated';
+ }catch(e){exportStatus.errors.push(e instanceof Error?e.message:String(e));exportStatus.raster='incomplete';exportStatus.pdf='incomplete';}finally{await browser?.close();}}
+ const receipt={version:1,sourceHash,sourceUnchanged:hash(m)===sourceHash,documentation:{structural:evidence,verifiedAsIs:m.mode==='as-is'&&evidence.warnings.length===0},architecture:assess(target.candidate).readiness,geometry:bundles.map(b=>({mode:b.model.mode,views:b.scenes.map(s=>({id:s.id,diagnostics:s.diagnostics}))})),exports:exportStatus,files:files.map(f=>resolve(f)),certification:false};
+ await writeJSON(join(out,'receipt.json'),receipt);
+ await writeFile(join(out,'ARCHITECTURE.md'),`# ${m.title}\n\nGenerated with Archi-Made-Easy.\n\n[Interactive workbench](index.html) · [ADR](adrs/ADR-001.md) · [Assessment](WAF-REPORT.json) · [Changes](remediation-diff.json)\n\n## Executive summary\n\n${m.description??'Evidence-backed architecture with a proposed remediation candidate.'}\n\nSource model preserved: ${receipt.sourceUnchanged}. Target assessment: ${receipt.architecture}. Production certification: no.\n\n## Tradeoffs\n\n${alternatives.rationale}\n\n${alternatives.options.map(o=>`- ${o.name}: ${JSON.stringify(o.scores)}`).join('\n')}\n\n## Confidence and limitations\n\nVendor terms, scenario assumptions and observed facts are distinct. Controls in the target are proposed, not deployed. Composite availability assumes independent failure domains and instant failover. Assessment coverage must be read alongside scores.\n\nVisual review: ${exportStatus.visualReview}. Browser rendering is not perceptual review.\n\n## Remediation\n\n${target.changes.map(c=>`- ${c.componentId}: ${c.proposal}`).join('\n')}\n\n## Missing evidence\n\n${evidence.warnings.map(w=>'- '+w).join('\n')}\n`);
+ return receipt;
+}

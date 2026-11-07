@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "trap-recovery-chain",
+  "title": "Trap Recovery Chain",
+  "mode": "as-is",
+  "components": [
+    {
+      "id": "api",
+      "label": "Api",
+      "kind": "service",
+      "rtoSeconds": 10
+    },
+    {
+      "id": "db",
+      "label": "Db",
+      "kind": "database",
+      "stateful": true,
+      "rtoSeconds": 600
+    }
+  ],
+  "relationships": [
+    {
+      "id": "read",
+      "from": "api",
+      "to": "db",
+      "kind": "sync"
+    }
+  ],
+  "evidence": []
+}

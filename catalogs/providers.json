@@ -1,0 +1,11 @@
+{
+ "schemaVersion":1,"retrievedAt":"2026-11-07","maxAgeDays":90,
+ "facts":[
+  {"id":"aws-s3-standard-sla","provider":"aws","service":"s3","property":"publishedSla","value":0.999,"conditions":{"storageClass":"STANDARD"},"source":"https://aws.amazon.com/s3/sla/","note":"Monthly uptime service-credit commitment; not durability or observed availability."},
+  {"id":"gcp-cloud-run-nongpu-sla","provider":"gcp","service":"cloud-run","property":"publishedSla","value":0.9995,"conditions":{"gpu":false},"source":"https://cloud.google.com/run/sla","note":"Non-GPU Cloud Run service commitment subject to published exclusions."},
+  {"id":"gcp-cloud-run-concurrency-limit","provider":"gcp","service":"cloud-run","property":"maxConcurrencyPerInstance","value":1000,"conditions":{},"source":"https://docs.cloud.google.com/run/quotas","note":"Product limit, not measured throughput or configured concurrency."},
+  {"id":"aws-lambda-concurrency-default","provider":"aws","service":"lambda","property":"regionalConcurrencyDefault","value":1000,"conditions":{},"source":"https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html","note":"Account/region quota may differ, including new-account reductions and approved increases."}
+ ],
+ "providerSources":{"azure":"https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services","aws":"https://aws.amazon.com/legal/service-level-agreements/","gcp":"https://cloud.google.com/terms/sla"},
+ "missing":["Azure SLA conditions require edition-specific extraction from current agreement; no unverified numeric value bundled.","No universal official cross-AZ or regional latency baseline.","Pricing estimates require dated regional pricing and workload inputs."]
+}

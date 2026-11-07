@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "counterexample-private-api",
+  "title": "Counterexample Private Api",
+  "mode": "as-is",
+  "components": [
+    {
+      "id": "private",
+      "label": "Private",
+      "kind": "service",
+      "public": false,
+      "controls": {
+        "edgeWaf": false
+      }
+    }
+  ],
+  "relationships": [],
+  "evidence": []
+}

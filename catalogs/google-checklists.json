@@ -1,0 +1,51 @@
+{
+  "repository": "google/skills",
+  "commit": "993b979cf055de97dd15d4d5751d2672de561679",
+  "retrievedAt": "2026-11-07",
+  "license": "Apache-2.0",
+  "licenseSource": "https://github.com/google/skills/blob/993b979cf055de97dd15d4d5751d2672de561679/LICENSE",
+  "entries": [
+    {
+      "pillar": "security",
+      "source": "https://raw.githubusercontent.com/google/skills/993b979cf055de97dd15d4d5751d2672de561679/skills/cloud/google-cloud-waf-security/SKILL.md",
+      "sha256": "90cf88c53d4bcf9f5239db2529aa7bdeba928701e85d406b559d3f6a12e57434",
+      "bytes": 16941,
+      "usage": "Referenced for authoring guidance; no upstream text bundled"
+    },
+    {
+      "pillar": "reliability",
+      "source": "https://raw.githubusercontent.com/google/skills/993b979cf055de97dd15d4d5751d2672de561679/skills/cloud/google-cloud-waf-reliability/SKILL.md",
+      "sha256": "0ee09cbba179ae1b99bd0d740afab577d52794d86b17f39a6d2b8ea27bc97439",
+      "bytes": 8614,
+      "usage": "Referenced for authoring guidance; no upstream text bundled"
+    },
+    {
+      "pillar": "cost-optimization",
+      "source": "https://raw.githubusercontent.com/google/skills/993b979cf055de97dd15d4d5751d2672de561679/skills/cloud/google-cloud-waf-cost-optimization/SKILL.md",
+      "sha256": "d8a60befc391e24616e7dac371e1ccfd2ecb38b1c207bef3428f155bdb84f1d7",
+      "bytes": 10767,
+      "usage": "Referenced for authoring guidance; no upstream text bundled"
+    },
+    {
+      "pillar": "operational-excellence",
+      "source": "https://raw.githubusercontent.com/google/skills/993b979cf055de97dd15d4d5751d2672de561679/skills/cloud/google-cloud-waf-operational-excellence/SKILL.md",
+      "sha256": "fc6f5cbab13ec5ba902f6a22a4511d7e22ffecdb618c7772b9d52e5fa0345a7f",
+      "bytes": 9588,
+      "usage": "Referenced for authoring guidance; no upstream text bundled"
+    },
+    {
+      "pillar": "performance-optimization",
+      "source": "https://raw.githubusercontent.com/google/skills/993b979cf055de97dd15d4d5751d2672de561679/skills/cloud/google-cloud-waf-performance-optimization/SKILL.md",
+      "sha256": "beaa5fc4db5e07bb79c0dba6abb09b40b291cc6b32f8eb71161db9526c32a5b1",
+      "bytes": 7519,
+      "usage": "Referenced for authoring guidance; no upstream text bundled"
+    },
+    {
+      "pillar": "sustainability",
+      "source": "https://raw.githubusercontent.com/google/skills/993b979cf055de97dd15d4d5751d2672de561679/skills/cloud/google-cloud-waf-sustainability/SKILL.md",
+      "sha256": "0788e132a4cd7408f09914a90a5bed0198c23fa76562377dfc919f642fac82a6",
+      "bytes": 13920,
+      "usage": "Referenced for authoring guidance; no upstream text bundled"
+    }
+  ]
+}
