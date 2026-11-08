@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "mcp-enterprise",
-  "title": "Enterprise MCP agent platform \u00e2\u20ac\u201d illustrative target",
+  "title": "Enterprise MCP agent platform — illustrative target",
   "mode": "target",
   "profile": "standard-production",
   "components": [
@@ -370,7 +370,7 @@
   "views": [
     {
       "id": "mcp",
-      "label": "1 \u00c2\u00b7 User and MCP protocol",
+      "label": "1 · User and MCP protocol",
       "type": "dataflow",
       "nodes": [
         "user",
@@ -383,7 +383,7 @@
     },
     {
       "id": "rest",
-      "label": "2 \u00c2\u00b7 Enterprise REST integration",
+      "label": "2 · Enterprise REST integration",
       "type": "dataflow",
       "nodes": [
         "server",
@@ -395,7 +395,7 @@
     },
     {
       "id": "security",
-      "label": "3 \u00c2\u00b7 Identity and tool security",
+      "label": "3 · Identity and tool security",
       "type": "deployment",
       "nodes": [
         "client",
@@ -407,7 +407,7 @@
     },
     {
       "id": "operations",
-      "label": "4 \u00c2\u00b7 Monitoring and audit",
+      "label": "4 · Monitoring and audit",
       "type": "deployment",
       "nodes": [
         "agent",
@@ -418,7 +418,7 @@
     },
     {
       "id": "scopes",
-      "label": "5 \u00c2\u00b7 Trust scopes",
+      "label": "5 · Trust scopes",
       "type": "deployment",
       "nodes": [
         "execution-zone",

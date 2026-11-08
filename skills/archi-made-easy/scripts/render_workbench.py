@@ -79,7 +79,7 @@ def scene(model):
         if n.get('parent'):
             lines += textwrap.wrap('Scope: ' + parent_names.get(n['parent'], n['parent']), 28)
         boxes.append({'id': n['id'], 'x': 60 + len(edges)*3 + (i % cols) * (300 + gap), 'y': 0, 'width': 300, 'height': max(48 + len(lines) * 22, 60 + 18*sum(e['from']==n['id'] or e['to']==n['id'] for e in edges)), 'lines': lines, 'row': i // cols})
-    y = 130 + top_gap
+    y = 180 + top_gap
     for row in range((len(boxes) + cols - 1) // cols):
         members = [b for b in boxes if b['row'] == row]
         height = max(b['height'] for b in members)
@@ -106,7 +106,7 @@ def scene(model):
         label = e.get('label', '')
         color = '#7c3aed' if 'MCP' in label.upper() else '#0284c7' if 'REST' in label.upper() else {'control':'#b45309','telemetry':'#64748b','async':'#0f766e'}.get(e['kind'], '#475569')
         routes.append({'id': e['id'], 'points': points, 'number': i+1, 'kind': e['kind'], 'color': color})
-    return {'boxes': boxes, 'routes': routes, 'width': max(b['x']+b['width'] for b in boxes)+gap, 'height': y+20}
+    return {'boxes': boxes, 'routes': routes, 'width': max(1000, max(b['x']+b['width'] for b in boxes)+gap), 'height': y+20}
 
 
 def view_models(model):
@@ -142,19 +142,57 @@ def view_models(model):
     return result
 
 
+def theme(node):
+    label = (node.get('label', '') + ' ' + node.get('service', '')).lower()
+    kind = node.get('kind', '')
+    if kind == 'boundary':
+        return ('Trust scope', '#475569', '#e2e8f0')
+    if kind == 'actor' or 'copilot' in label:
+        return ('Experience', '#0f766e', '#ccfbf1')
+    if kind in ('ai', 'llm') or 'orchestrat' in label:
+        return ('Intelligence', '#7e22ce', '#f3e8ff')
+    if kind == 'identity' or any(k in label for k in ('key vault', 'entra', 'identity', 'secret')):
+        return ('Security', '#92400e', '#fef3c7')
+    if any(k in label for k in ('monitor', 'telemetry', 'observability')):
+        return ('Operations', '#0e7490', '#cffafe')
+    if 'mcp' in label:
+        return ('MCP protocol', '#5b21b6', '#ede9fe')
+    if kind == 'api' or 'api management' in label:
+        return ('API integration', '#1d4ed8', '#dbeafe')
+    if any(k in label for k in ('sap', 'servicenow', 'salesforce')) or kind in ('database', 'storage', 'queue'):
+        return ('Enterprise / data', '#166534', '#dcfce7')
+    return ('Service', '#334155', '#f1f5f9')
+
+
 def svg(model, s):
     esc = html.escape
-    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{s["width"]}" height="{s["height"]}" viewBox="0 0 {s["width"]} {s["height"]}" style="font-family:Arial,sans-serif"><rect width="100%" height="100%" fill="white"/><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10" fill="#475569"/></marker></defs>', f'<text x="30" y="35" font-size="24">Archi-Made-Easy · {esc(model.get("mode", "unspecified"))}</text><text x="30" y="65" font-size="16">Scoped architecture view · select a component for evidence and controls</text><text x="30" y="92" font-size="16">Purple: MCP · blue: REST · amber: control · grey: other · dashed: non-sync</text>']
-    for r in s['routes']:
-        d = ' '.join(('M' if i == 0 else 'L') + f'{p[0]} {p[1]}' for i, p in enumerate(r['points']))
-        dash = '' if r['kind'] == 'sync' else 'stroke-dasharray="7 5"'
-        parts.append(f'<path d="{d}" fill="none" stroke="white" stroke-width="7"/><path d="{d}" fill="none" stroke="{r["color"]}" stroke-width="2" {dash} marker-end="url(#arrow)"/>')
+    nodes = {n['id']:n for n in model['components']}
+    roles = list(dict.fromkeys(theme(nodes[b['id']]) for b in s['boxes']))
+    markers = ''.join(f'<marker id="arrow-{i}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="{r["color"]}"/></marker>' for i,r in enumerate(s['routes']))
+    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{s["width"]}" height="{s["height"]}" viewBox="0 0 {s["width"]} {s["height"]}" style="font-family:Arial,sans-serif"><defs>{markers}</defs><rect width="100%" height="100%" fill="#f8fafc"/>', f'<text x="30" y="35" font-size="24" font-weight="700" fill="#0f172a">Archi-Made-Easy · {esc(model.get("mode", "unspecified"))}</text><text x="30" y="64" font-size="16" fill="#475569">Select a component to inspect controls, evidence and failure impact</text>']
+    legend_cols = max(1, (s['width']-60)//172)
+    for i,(role,accent,tint) in enumerate(roles):
+        x = 30 + (i%legend_cols)*172
+        ly = 82 + (i//legend_cols)*34
+        parts.append(f'<rect x="{x}" y="{ly}" width="160" height="28" rx="14" fill="{tint}"/><circle cx="{x+14}" cy="{ly+14}" r="5" fill="{accent}"/><text x="{x+26}" y="{ly+19}" font-size="13" font-weight="700" fill="{accent}">{esc(role)}</text>')
+    parts.append(f'<text x="30" y="{137+34*((len(roles)-1)//legend_cols)}" font-size="14" fill="#475569">Flows: purple MCP · blue REST · amber control · dashed non-sync · gaps denote crossings</text>')
+    for i,r in enumerate(s['routes']):
+        d = ' '.join(('M' if j == 0 else 'L') + f'{p[0]} {p[1]}' for j, p in enumerate(r['points']))
+        dash = '' if r['kind'] == 'sync' else 'stroke-dasharray="8 5"'
+        parts.append(f'<path d="{d}" fill="none" stroke="#f8fafc" stroke-width="9"/><path d="{d}" fill="none" stroke="{r["color"]}" stroke-width="3" {dash} marker-end="url(#arrow-{i})"/>')
         px, py = r['points'][0]
-        parts.append(f'<rect x="{px+5}" y="{py-8}" width="22" height="16" fill="white"/><text x="{px+7}" y="{py+5}" font-size="13">{r["number"]}</text>')
+        parts.append(f'<rect x="{px+4}" y="{py-11}" width="26" height="22" rx="6" fill="{r["color"]}"/><text x="{px+17}" y="{py+5}" text-anchor="middle" font-size="13" font-weight="700" fill="white">{r["number"]}</text>')
     for b in s['boxes']:
-        parts.append(f'<g class="node" data-id="{esc(b["id"], quote=True)}" tabindex="0" role="button" aria-label="{esc(b["lines"][0], quote=True)}"><rect x="{b["x"]}" y="{b["y"]}" width="{b["width"]}" height="{b["height"]}" rx="8" fill="#f8fafc" stroke="#94a3b8"/><path d="M{b["x"]+10} {b["y"]+10} h{b["width"]-20}" stroke="#2563eb" stroke-width="4"/>')
+        node = nodes[b['id']]
+        role, accent, tint = theme(node)
+        title_count = len(textwrap.wrap(node['label'],28))
+        hh = 20 + title_count*22
+        x,y,w = b['x'],b['y'],b['width']
+        parts.append(f'<g class="node" data-id="{esc(b["id"], quote=True)}" tabindex="0" role="button" aria-label="{esc(node["label"], quote=True)}"><rect class="card" x="{x}" y="{y}" width="{w}" height="{b["height"]}" rx="10" fill="{tint}" stroke="{accent}" stroke-width="1.5"/><path d="M{x+10} {y} H{x+w-10} Q{x+w} {y} {x+w} {y+10} V{y+hh} H{x} V{y+10} Q{x} {y} {x+10} {y}Z" fill="{accent}"/>')
         for j, line in enumerate(b['lines']):
-            parts.append(f'<text x="{b["x"]+18}" y="{b["y"]+35+j*22}" font-size="16">{esc(line)}</text>')
+            ink = 'white' if j<title_count else '#1e293b'
+            weight = '700' if j<title_count else '400'
+            parts.append(f'<text x="{x+18}" y="{y+35+j*22}" font-size="16" font-weight="{weight}" fill="{ink}">{esc(line)}</text>')
         parts.append('</g>')
     return ''.join(parts) + '</svg>'
 
@@ -166,8 +204,10 @@ def drawio(model, s):
     ET.SubElement(root, 'mxCell', id='0')
     ET.SubElement(root, 'mxCell', id='1', parent='0')
     ids = {n['id']: 'n-' + n['id'] for n in model['components']}
+    nodes = {n['id']:n for n in model['components']}
     for b in s['boxes']:
-        cell = ET.SubElement(root, 'mxCell', id=ids[b['id']], value='\n'.join(b['lines']), vertex='1', parent='1', style='rounded=1;whiteSpace=wrap;html=0;fontSize=16;fillColor=#f8fafc;strokeColor=#2563eb;', semanticId=b['id'])
+        role, accent, tint = theme(nodes[b['id']])
+        cell = ET.SubElement(root, 'mxCell', id=ids[b['id']], value='\n'.join(b['lines']), vertex='1', parent='1', style=f'rounded=1;whiteSpace=wrap;html=0;fontSize=16;fontColor=#1e293b;fillColor={tint};strokeColor={accent};strokeWidth=2;', semanticId=b['id'])
         ET.SubElement(cell, 'mxGeometry', x=str(b['x']), y=str(b['y']), width=str(b['width']), height=str(b['height']), attrib={'as': 'geometry'})
     byid = {b['id']:b for b in s['boxes']}
     for e, r in zip(model['relationships'], s['routes']):
@@ -182,8 +222,8 @@ def drawio(model, s):
 
 
 PAGE = r'''<!doctype html><html lang="en"><meta charset="utf-8"><title>Archi-Made-Easy workbench</title>
-<style>body{margin:0;font:16px Arial;color:#172033}header{padding:16px;background:#eef2ff;display:flex;gap:12px;flex-wrap:wrap}button,select,input{font:inherit;padding:8px}main{display:grid;grid-template-columns:minmax(0,1fr) 300px;height:calc(100vh - 80px)}#canvas{overflow:auto}#drawing{transform-origin:0 0}aside{padding:20px;overflow:auto;border-left:1px solid #ddd}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:13px monospace}.node{cursor:pointer}.node.failed rect{fill:#fee2e2}.node.degraded rect{fill:#fef3c7}.node.match rect{stroke:#2563eb;stroke-width:4}</style>
-<header><strong>Archi-Made-Easy</strong><select id="view" aria-label="Topology"></select><input id="search" placeholder="Search components"><button id="fit">Fit view</button><button id="minus">−</button><button id="plus">+</button><label><input type="checkbox" id="failure">Failure simulation</label></header><main><div id="canvas"><div id="drawing"></div></div><aside><p>Restricted-host renderer. WAF, full schema validation, availability and visual review: not performed. Containment shown as scope text; not nested geometry.</p><div id="summary" style="white-space:pre-wrap;line-height:1.6"></div><details><summary>Technical evidence and model</summary><pre id="detail"></pre></details></aside></main>
+<style>body{margin:0;font:15px Arial;color:#172033;background:#f1f5f9}header{padding:18px 20px;background:#0f172a;color:white;border-bottom:4px solid #8b5cf6;display:flex;gap:12px;flex-wrap:wrap}button,select,input{font:inherit;padding:9px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;color:#0f172a}button{cursor:pointer}button:hover{background:#ede9fe}header strong{font-size:19px;letter-spacing:-.4px;margin-right:8px}main{display:grid;grid-template-columns:minmax(0,1fr) 300px;height:calc(100vh - 80px)}#canvas{overflow:auto;background:#f8fafc}#drawing{transform-origin:0 0}aside{padding:22px;overflow:auto;background:white;border-left:1px solid #dbeafe}aside h2{font-size:20px;margin:10px 0 18px}aside details{margin-top:18px;padding:12px;background:#f1f5f9;border-radius:8px}aside summary{cursor:pointer;color:#334155;font-weight:600}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:13px monospace}.node{cursor:pointer}.node.failed .card{fill:#fee2e2;stroke:#dc2626;stroke-width:4}.node.degraded .card{fill:#fef3c7;stroke:#d97706;stroke-width:4}.node.match .card{stroke:#2563eb;stroke-width:4}.node:focus{outline:none}.node:focus .card{stroke:#0f172a;stroke-width:4}</style>
+<header><strong>Archi-Made-Easy</strong><select id="view" aria-label="Topology"></select><input id="search" placeholder="Search components"><button id="fit">Fit view</button><button id="minus">−</button><button id="plus">+</button><label><input type="checkbox" id="failure">Failure simulation</label></header><main><div id="canvas"><div id="drawing"></div></div><aside><span style="font-size:11px;font-weight:700;letter-spacing:1.6px;color:#6d28d9">ARCHITECTURE INSPECTOR</span><h2>Explore your system</h2><div id="summary" style="white-space:pre-wrap;line-height:1.6"></div><details><summary>Technical evidence and model</summary><pre id="detail"></pre></details><details><summary>Assessment scope</summary><p>Restricted-host renderer. WAF, full schema validation, availability and visual review: not performed. Containment is shown as scope text, not nested geometry. Colors identify roles, not verified security status.</p></details></aside></main>
 <script>const tabs=__DATA__;const $=id=>document.getElementById(id);let current=0,zoom=1;
 for(let i=0;i<tabs.length;i++){const o=document.createElement('option');o.value=i;o.textContent=(tabs[i].model.mode||'architecture')+' · '+tabs[i].title;$('view').append(o)}
 function fit(){zoom=Math.min(1,Math.max(.65,($('canvas').clientWidth-20)/tabs[current].width));$('drawing').style.zoom=zoom} $('fit').onclick=fit;function show(){$('drawing').innerHTML=tabs[current].svg;fit();$('summary').textContent=tabs[current].title+'\n\n'+tabs[current].visibleEdges.map((e,i)=>(i+1)+'. '+(e.label||e.kind)).join('\n')+'\n\nSelect a component for its proposed controls and evidence. Failure analysis uses the entire model, including other views.';$('detail').textContent=JSON.stringify({view:tabs[current].title,note:'Scoped view; relationships outside this view remain in the full model. Failure simulation uses the full model.',flows:tabs[current].visibleEdges.map((e,i)=>({number:i+1,...e})),assumptions:tabs[current].model.assumptions},null,2)}
@@ -236,7 +276,8 @@ def deliver(models, out):
                 draw.polygon([(x, y), (x-9, y-5), (x-9, y+5)], fill='#475569')
                 draw.text((pts[0][0]-30, pts[0][1]-18), str(r['number']), fill='#172033', font=font)
             for b in s['boxes']:
-                draw.rounded_rectangle((b['x'], b['y'], b['x']+b['width'], b['y']+b['height']), radius=8, fill='#f8fafc', outline='#2563eb', width=2)
+                role, accent, tint = theme(next(n for n in model['components'] if n['id']==b['id']))
+                draw.rounded_rectangle((b['x'], b['y'], b['x']+b['width'], b['y']+b['height']), radius=8, fill=tint, outline=accent, width=2)
                 for j, line in enumerate(b['lines']):
                     draw.text((b['x']+18, b['y']+18+j*22), line, fill='#172033', font=font)
             name = prefix+'architecture.png'

@@ -16,4 +16,6 @@ python scripts/render_workbench.py references/mcp-enterprise.casg.json --out out
 
 Open output/archi-workbench.html. Its view selector includes protocol, REST, identity/security, monitoring and trust-scope views. Draw.io contains corresponding pages. Failure inspection uses the entire model, including hidden dependencies. Large views are partitioned; connector detail pages retain cross-view relationships.
 
+The renderer colors cards by architectural role, with a matching legend: experience (teal), intelligence/MCP (purple), APIs (blue), security (amber), enterprise/data (green), operations (cyan). These are role labels, not compliance scores or official vendor branding. Failure highlights remain red/amber. Preserve readable labels as well as colors.
+
 This is the restricted Python renderer, not the Node policy engine. It does not run WAF assessments, full schema validation, availability calculations, nested trust-zone rendering, or full semantic draw.io round trips. Scope labels and the original CASG preserve boundaries. PNG requires preinstalled Pillow/font; SVG/HTML remain available without it. Hosted-agent compatibility still depends on actual execution and attachment tools.
