@@ -1,0 +1,43 @@
+name: Package release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+      - run: npm run package:skill
+      - run: node scripts/test-package.mjs
+      - run: npm run package:compact
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const version = JSON.parse(fs.readFileSync('package.json', 'utf8')).version;
+            const tag = `v${version}`;
+            if (context.ref !== `refs/tags/${tag}`) throw new Error('Run this workflow on the matching version tag.');
+            const repo = {...context.repo};
+            const notes = `docs/releases/${tag}.md`;
+            const body = fs.existsSync(notes) ? fs.readFileSync(notes, 'utf8') : 'Complete and compact skill packages. See README and included capability limitations.';
+            let release;
+            try { release = (await github.rest.repos.getReleaseByTag({...repo, tag})).data; }
+            catch (error) { if (error.status !== 404) throw error; release = (await github.rest.repos.createRelease({...repo, tag_name: tag, name: `Archi-Made-Easy ${tag}`, body, draft: false, prerelease: false})).data; }
+            for (const name of [`archi-made-easy-${version}-compact.zip`, 'COMPACT-SHA256SUMS.txt', `archi-made-easy-${version}-full.zip`, 'SHA256SUMS.txt']) {
+              if (release.assets.some(asset => asset.name === name)) continue;
+              const data = fs.readFileSync(`artifacts/packages/${name}`);
+              await github.rest.repos.uploadReleaseAsset({...repo, release_id: release.id, name, data, headers: {'content-type': name.endsWith('.zip') ? 'application/zip' : 'text/plain', 'content-length': data.length}});
+            }
