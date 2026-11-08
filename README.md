@@ -10,7 +10,7 @@ An open-source architecture skill and local CLI for turning system models into *
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Node.js 22+](https://img.shields.io/badge/Node.js-22%2B-339933?logo=nodedotjs&logoColor=white)](package.json)
 
-**[Download the full skill ZIP](https://github.com/avinash7509/archi-made-easy/releases/download/v0.1.1/archi-made-easy-0.1.1-full.zip)** · **[Try the live demo →](https://avinash7509.github.io/archi-made-easy/)** · [Quick start](#download-and-start) · [Roadmap](ROADMAP.md)
+**[Download the full skill ZIP](https://github.com/avinash7509/archi-made-easy/releases/download/v0.1.2/archi-made-easy-0.1.2-full.zip)** · **[Try the live demo →](https://avinash7509.github.io/archi-made-easy/)** · [Quick start](#download-and-start) · [Roadmap](ROADMAP.md)
 
 ![Model a system, inspect its risks, simulate failure, export editable diagrams](docs/assets/overview.svg)
 
@@ -39,7 +39,7 @@ Archi-Made-Easy connects those questions to one versioned architecture model. Yo
 
 ## Download and start
 
-**[Download Archi-Made-Easy — complete v0.1.1 package](https://github.com/avinash7509/archi-made-easy/releases/download/v0.1.1/archi-made-easy-0.1.1-full.zip)**. One ZIP includes root `SKILL.md`, references, compiled runtime, pinned JavaScript dependencies, schemas, catalogs, source, examples, and an interactive demo. No Git clone or npm install is needed.
+**[Download Archi-Made-Easy — complete v0.1.2 package](https://github.com/avinash7509/archi-made-easy/releases/download/v0.1.2/archi-made-easy-0.1.2-full.zip)**. One ZIP includes root `SKILL.md`, references, compiled runtime, pinned JavaScript dependencies, schemas, catalogs, source, examples, and an interactive demo. No Git clone or npm install is needed.
 
 1. Extract the ZIP and read `START-HERE.md`.
 2. With **Node.js 22+** installed, run `node setup.mjs`.
@@ -47,7 +47,9 @@ Archi-Made-Easy connects those questions to one versioned architecture model. Yo
 
 For PNG/PDF, run `node setup.mjs --browser` once to download Chromium. Optional vendor icons also download separately. HTML/SVG/draw.io and analysis work offline after extraction with Node installed.
 
-You can upload the ZIP to hosts accepting skill archives, subject to their limits. Full functionality requires filesystem access and Node.js execution; a Markdown-only or chat-only host cannot run the engine. Hosted-agent compatibility is not certified. This bundles the **implemented v0.1 features**, not every item in the [roadmap](ROADMAP.md). [Setup guide](scripts/bundle/START-HERE.md) · [Release and checksums](https://github.com/avinash7509/archi-made-easy/releases/tag/v0.1.1).
+Python-only host? Run `python scripts/render_workbench.py runtime/examples/hybrid.json --out artifacts/python-demo`. This offline fallback creates HTML, SVG, draw.io and CASG; PNG is optional. It does not run the full Node policy/availability engines.
+
+You can upload the ZIP to hosts accepting skill archives, subject to their limits. Full functionality requires filesystem access and Node.js execution; a Markdown-only or chat-only host cannot run the engine. Hosted-agent compatibility is not certified. This bundles the **implemented v0.1 features**, not every item in the [roadmap](ROADMAP.md). [Setup guide](scripts/bundle/START-HERE.md) · [Release and checksums](https://github.com/avinash7509/archi-made-easy/releases/tag/v0.1.2).
 
 ## Run it locally
 

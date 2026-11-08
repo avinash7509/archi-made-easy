@@ -1,6 +1,6 @@
 {
   "name": "archi-made-easy",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "description": "Evidence-backed architecture reasoning and editable diagrams",
   "license": "Apache-2.0",

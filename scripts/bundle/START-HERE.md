@@ -13,6 +13,18 @@ This ZIP contains the skill instructions, specialist references, compiled runtim
 
 Specific Copilot Studio/other hosted-agent upload and execution compatibility has not been certified. A successful upload is not proof the runtime can execute there.
 
+## Python-only hosts
+
+If Python 3.9+ can execute but Node cannot, run:
+
+```sh
+python scripts/render_workbench.py runtime/examples/hybrid.json --out artifacts/python-demo
+```
+
+This creates `archi-workbench.html`, editable draw.io, SVG, CASG and a delivery manifest without downloads or third-party Python dependencies. PNG is optional if Pillow and a suitable font are present. Add `--target path/to/target.json` for an agent-authored brownfield target.
+
+This fallback provides an orthogonal overview and structural failure inspection, not the full Node engine. Six-pillar policy checks, full schema validation, ELK nesting, availability analysis, PDF, and full draw.io round-trip metadata are unavailable. Its receipt records these limits. Ask the agent to provide explicit download links to HTML and editable files; an inline PNG alone is incomplete delivery.
+
 ## Start without cloning or npm install
 
 From the extracted directory:

@@ -1,4 +1,6 @@
-# Implementation status — 0.1.0
+# Implementation status — 0.1.2
+
+The v0.1.2 update adds a standard-library Python fallback for restricted hosts: interactive HTML, editable draw.io, SVG and CASG, with optional Pillow PNG. It does not run Node WAF/schema/availability engines or preserve full nested draw.io round-trip metadata. Node remains the primary engine. Both paths provide explicit artifact manifests; browser installation is unnecessary for HTML.
 
 ## Executable now
 

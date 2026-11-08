@@ -15,7 +15,7 @@ for(const [name,data] of Object.entries(files)){
  assert(!/(^|\/)(\.git|\.cache|\.env)(\/|$)/.test(name),'Private state in bundle');
  const target=join(destination,name);await mkdir(dirname(target),{recursive:true});await writeFile(target,data);
 }
-for(const name of ['SKILL.md','START-HERE.md','runtime/dist/cli.js','runtime/node_modules/elkjs/package.json','bundle-manifest.json'])await access(join(destination,name));
+for(const name of ['SKILL.md','scripts/render_workbench.py','START-HERE.md','runtime/dist/cli.js','runtime/node_modules/elkjs/package.json','bundle-manifest.json'])await access(join(destination,name));
 // Prevent network access for the setup demo; no dependency on the checkout's modules.
 const guard=join(destination,'offline-guard.cjs');
 await writeFile(guard,"require('node:net').Socket.prototype.connect=function(){throw new Error('Network forbidden in offline package test');};globalThis.fetch=()=>{throw new Error('Network forbidden in offline package test');};");
