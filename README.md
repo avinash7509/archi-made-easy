@@ -10,7 +10,7 @@ An open-source architecture skill and local CLI for turning system models into *
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Node.js 22+](https://img.shields.io/badge/Node.js-22%2B-339933?logo=nodedotjs&logoColor=white)](package.json)
 
-**[Download the full skill ZIP](https://github.com/avinash7509/archi-made-easy/releases/download/v0.1.2/archi-made-easy-0.1.2-full.zip)** · **[Try the live demo →](https://avinash7509.github.io/archi-made-easy/)** · [Quick start](#download-and-start) · [Roadmap](ROADMAP.md)
+**[Download the full skill ZIP](https://github.com/avinash7509/archi-made-easy/releases/download/v0.1.3/archi-made-easy-0.1.3-full.zip)** · **[Try the live demo →](https://avinash7509.github.io/archi-made-easy/)** · [Quick start](#download-and-start) · [Roadmap](ROADMAP.md)
 
 ![Model a system, inspect its risks, simulate failure, export editable diagrams](docs/assets/overview.svg)
 
@@ -37,9 +37,15 @@ Archi-Made-Easy connects those questions to one versioned architecture model. Yo
 
 **Local execution. Apache-2.0. No paid diagramming service required.** After setup, rendering and bundled assessments work offline. Provider refreshes and optional icon acquisition need network access.
 
+## Compact skill upload (Python hosts)
+
+**[Download the compact skill ZIP](https://github.com/avinash7509/archi-made-easy/releases/download/v0.1.3/archi-made-easy-0.1.3-compact.zip)** for hosts where you upload only `SKILL.md`, `agents/`, `references/` and `scripts/`. It includes its own schema and MCP example; no manual trimming or Node installation is needed. Python execution and file attachments must be supported by the host.
+
+The compact renderer produces multi-view interactive HTML, multi-page editable draw.io, SVG and CASG. It uses compact columns, explicit MCP/REST flow colors and whole-model failure inspection. It does not include the Node WAF/availability engine. [Start here](skills/archi-made-easy/references/compact-start.md) · [MCP demo](https://avinash7509.github.io/archi-made-easy/compact-mcp.html).
+
 ## Download and start
 
-**[Download Archi-Made-Easy — complete v0.1.2 package](https://github.com/avinash7509/archi-made-easy/releases/download/v0.1.2/archi-made-easy-0.1.2-full.zip)**. One ZIP includes root `SKILL.md`, references, compiled runtime, pinned JavaScript dependencies, schemas, catalogs, source, examples, and an interactive demo. No Git clone or npm install is needed.
+**[Download Archi-Made-Easy — complete v0.1.3 package](https://github.com/avinash7509/archi-made-easy/releases/download/v0.1.3/archi-made-easy-0.1.3-full.zip)**. One ZIP includes root `SKILL.md`, references, compiled runtime, pinned JavaScript dependencies, schemas, catalogs, source, examples, and an interactive demo. No Git clone or npm install is needed.
 
 1. Extract the ZIP and read `START-HERE.md`.
 2. With **Node.js 22+** installed, run `node setup.mjs`.
@@ -49,7 +55,7 @@ For PNG/PDF, run `node setup.mjs --browser` once to download Chromium. Optional 
 
 Python-only host? Run `python scripts/render_workbench.py runtime/examples/hybrid.json --out artifacts/python-demo`. This offline fallback creates HTML, SVG, draw.io and CASG; PNG is optional. It does not run the full Node policy/availability engines.
 
-You can upload the ZIP to hosts accepting skill archives, subject to their limits. Full functionality requires filesystem access and Node.js execution; a Markdown-only or chat-only host cannot run the engine. Hosted-agent compatibility is not certified. This bundles the **implemented v0.1 features**, not every item in the [roadmap](ROADMAP.md). [Setup guide](scripts/bundle/START-HERE.md) · [Release and checksums](https://github.com/avinash7509/archi-made-easy/releases/tag/v0.1.2).
+You can upload the ZIP to hosts accepting skill archives, subject to their limits. Full functionality requires filesystem access and Node.js execution; a Markdown-only or chat-only host cannot run the engine. Hosted-agent compatibility is not certified. This bundles the **implemented v0.1 features**, not every item in the [roadmap](ROADMAP.md). [Setup guide](scripts/bundle/START-HERE.md) · [Release and checksums](https://github.com/avinash7509/archi-made-easy/releases/tag/v0.1.3).
 
 ## Run it locally
 

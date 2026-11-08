@@ -1,0 +1,438 @@
+{
+  "schemaVersion": 1,
+  "id": "mcp-enterprise",
+  "title": "Enterprise MCP agent platform \u00e2\u20ac\u201d illustrative target",
+  "mode": "target",
+  "profile": "standard-production",
+  "components": [
+    {
+      "id": "user",
+      "label": "Enterprise user",
+      "kind": "actor",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "copilot",
+      "label": "Microsoft 365 Copilot",
+      "kind": "service",
+      "controls": {
+        "authentication": true
+      },
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "agent",
+      "label": "AI agent / orchestrator",
+      "kind": "ai",
+      "parent": "execution-zone",
+      "controls": {
+        "toolAllowlist": true,
+        "auditLogging": true,
+        "promptInjectionDefense": true
+      },
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "client",
+      "label": "MCP client SDK",
+      "kind": "service",
+      "parent": "execution-zone",
+      "controls": {
+        "tls": true,
+        "authentication": true
+      },
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "gateway",
+      "label": "MCP gateway role",
+      "kind": "api",
+      "parent": "execution-zone",
+      "controls": {
+        "authentication": true,
+        "authorization": true,
+        "rateLimiting": true
+      },
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "server",
+      "label": "MCP tool server",
+      "kind": "service",
+      "parent": "execution-zone",
+      "controls": {
+        "toolAllowlist": true,
+        "authorization": true,
+        "tls": true
+      },
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "apim",
+      "label": "Azure API Management",
+      "kind": "api",
+      "provider": "azure",
+      "service": "api-management",
+      "parent": "execution-zone",
+      "controls": {
+        "authentication": true,
+        "tls": true,
+        "originRestricted": true
+      },
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "apis",
+      "label": "Enterprise REST APIs",
+      "kind": "api",
+      "parent": "execution-zone",
+      "controls": {
+        "authorization": true,
+        "tls": true
+      },
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "servicenow",
+      "label": "ServiceNow",
+      "kind": "service",
+      "parent": "enterprise-zone",
+      "controls": {
+        "authentication": true,
+        "auditLogging": true
+      },
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "sap",
+      "label": "SAP",
+      "kind": "service",
+      "parent": "enterprise-zone",
+      "controls": {
+        "authentication": true,
+        "auditLogging": true
+      },
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "entra",
+      "label": "Microsoft Entra ID",
+      "kind": "identity",
+      "provider": "azure",
+      "controls": {
+        "authentication": true
+      },
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "vault",
+      "label": "Azure Key Vault",
+      "kind": "service",
+      "provider": "azure",
+      "controls": {
+        "workloadIdentity": true,
+        "auditLogging": true
+      },
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "monitor",
+      "label": "Azure Monitor",
+      "kind": "service",
+      "provider": "azure",
+      "controls": {
+        "observability": true
+      },
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "execution-zone",
+      "label": "Enterprise agent trust zone",
+      "kind": "boundary",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "enterprise-zone",
+      "label": "Enterprise application boundary",
+      "kind": "boundary",
+      "evidence": [
+        "design"
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "f1",
+      "from": "user",
+      "to": "copilot",
+      "label": "User interaction",
+      "kind": "sync",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "f2",
+      "from": "copilot",
+      "to": "agent",
+      "label": "Agent invocation (integration assumed)",
+      "kind": "sync",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "f3",
+      "from": "agent",
+      "to": "client",
+      "label": "Tool orchestration",
+      "kind": "sync",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "f4",
+      "from": "client",
+      "to": "gateway",
+      "label": "MCP over HTTPS",
+      "kind": "sync",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "f5",
+      "from": "gateway",
+      "to": "server",
+      "label": "MCP tool routing",
+      "kind": "sync",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "f6",
+      "from": "server",
+      "to": "apim",
+      "label": "REST / HTTPS tool adapter",
+      "kind": "sync",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "f7",
+      "from": "apim",
+      "to": "apis",
+      "label": "REST / HTTPS policy-controlled",
+      "kind": "sync",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "f8",
+      "from": "apis",
+      "to": "servicenow",
+      "label": "REST / HTTPS ITSM",
+      "kind": "sync",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "f9",
+      "from": "apis",
+      "to": "sap",
+      "label": "REST / HTTPS SAP adapter",
+      "kind": "sync",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "f10",
+      "from": "client",
+      "to": "entra",
+      "label": "OAuth token acquisition",
+      "kind": "control",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "f11",
+      "from": "gateway",
+      "to": "entra",
+      "label": "Issuer / audience validation configuration",
+      "kind": "control",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "f12",
+      "from": "server",
+      "to": "vault",
+      "label": "Workload identity / secrets retrieval",
+      "kind": "control",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "f13",
+      "from": "agent",
+      "to": "monitor",
+      "label": "Redacted audit events",
+      "kind": "telemetry",
+      "dependency": "optional",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "f14",
+      "from": "gateway",
+      "to": "monitor",
+      "label": "Gateway telemetry",
+      "kind": "telemetry",
+      "dependency": "optional",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "f15",
+      "from": "apim",
+      "to": "monitor",
+      "label": "API telemetry",
+      "kind": "telemetry",
+      "dependency": "optional",
+      "evidence": [
+        "design"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "design",
+      "kind": "proposed",
+      "source": "Illustrative design for the MCP component brief; not observed deployment",
+      "conditions": "Controls are proposals, not validated configurations."
+    },
+    {
+      "id": "apim-guidance",
+      "kind": "vendor-published",
+      "source": "https://learn.microsoft.com/en-us/azure/api-management/mcp-server-overview",
+      "retrievedAt": "2026-11-08",
+      "conditions": "APIM may itself implement the MCP gateway role; verify edition, region and transport."
+    }
+  ],
+  "assumptions": [
+    "Copilot-to-agent integration is proposed; supported deployment mechanism must be verified.",
+    "MCP client is an SDK role inside the host, not necessarily a separately deployed service.",
+    "MCP gateway is a logical role that APIM can implement. This option separates MCP routing from downstream REST policy; it does not mandate buying two gateways.",
+    "Control-plane edges describe configuration and token acquisition, not a live Entra call on every request.",
+    "Never pass through inbound tokens to an unintended audience; acquire appropriately scoped downstream credentials.",
+    "Edition, region, capacity, recovery and availability remain unspecified. No SLA is asserted.",
+    "Tool calls need bounded timeouts and safe retry/idempotency design. Tool permissions and audit redaction require implementation and testing."
+  ],
+  "views": [
+    {
+      "id": "mcp",
+      "label": "1 \u00c2\u00b7 User and MCP protocol",
+      "type": "dataflow",
+      "nodes": [
+        "user",
+        "copilot",
+        "agent",
+        "client",
+        "gateway",
+        "server"
+      ]
+    },
+    {
+      "id": "rest",
+      "label": "2 \u00c2\u00b7 Enterprise REST integration",
+      "type": "dataflow",
+      "nodes": [
+        "server",
+        "apim",
+        "apis",
+        "servicenow",
+        "sap"
+      ]
+    },
+    {
+      "id": "security",
+      "label": "3 \u00c2\u00b7 Identity and tool security",
+      "type": "deployment",
+      "nodes": [
+        "client",
+        "gateway",
+        "server",
+        "entra",
+        "vault"
+      ]
+    },
+    {
+      "id": "operations",
+      "label": "4 \u00c2\u00b7 Monitoring and audit",
+      "type": "deployment",
+      "nodes": [
+        "agent",
+        "gateway",
+        "apim",
+        "monitor"
+      ]
+    },
+    {
+      "id": "scopes",
+      "label": "5 \u00c2\u00b7 Trust scopes",
+      "type": "deployment",
+      "nodes": [
+        "execution-zone",
+        "enterprise-zone"
+      ]
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "tools",
+      "label": "Enterprise tool execution",
+      "entrypoints": [
+        "agent"
+      ]
+    }
+  ]
+}

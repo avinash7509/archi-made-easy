@@ -1,6 +1,8 @@
-# Implementation status — 0.1.2
+# Implementation status — 0.1.3
 
 The v0.1.2 update adds a standard-library Python fallback for restricted hosts: interactive HTML, editable draw.io, SVG and CASG, with optional Pillow PNG. It does not run Node WAF/schema/availability engines or preserve full nested draw.io round-trip metadata. Node remains the primary engine. Both paths provide explicit artifact manifests; browser installation is unnecessary for HTML.
+
+The v0.1.3 compact package includes the schema and MCP example inside references/, compact multi-column Python layouts, explicit view slicing with connector pages, and a readable inspector. It is tested without the Node runtime or third-party Python modules. Scope labels are not nested boundary geometry.
 
 ## Executable now
 
