@@ -41,3 +41,7 @@ The compact renderer defaults to one full master architecture containing all com
 Deliver top-level `architecture-master.svg`, `architecture-master.png` when an installed rasterizer succeeds, `archi-workbench.html`, editable `architecture.drawio`, CASG, and `architecture-artifacts.zip`. Link the master SVG/PNG as the inline preview and link the workbench separately. All components must remain mounted when a lens or sequence step is selected. Do not replace the master with an isolated detail view. PNG absence must be reported, not hidden or replaced by an unrelated sketch. Standard Python generates SVG/HTML/draw.io without downloads; PNG requires installed CairoSVG, Resvg or Chromium.
 
 For plane grouping, routing clearance, custom role subtitles and visual-review limits, read `references/visual-geometry.md`.
+
+## Production topology synthesis
+
+Before authoring enterprise deployment models, read `references/production-topology.md`. Global edge plus regional compute in a scalable/production request defaults to a **proposed primary + warm-standby design**, subject to explicit cost, residency and single-region constraints. Preserve observed systems. Use deployment metadata for posture, network attachments, recovery assumptions and sourced IaC skeletons. Keep regional secrets near their consumers; do not equate private endpoints with VNet injection.

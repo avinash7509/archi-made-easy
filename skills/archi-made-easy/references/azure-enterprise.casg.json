@@ -1,0 +1,595 @@
+{
+  "schemaVersion": 1,
+  "id": "azure-enterprise-regional",
+  "title": "Azure enterprise web application \u2014 proposed warm standby",
+  "mode": "target",
+  "profile": "enterprise-critical",
+  "components": [
+    {
+      "id": "users",
+      "label": "Enterprise users",
+      "kind": "actor",
+      "provider": "azure",
+      "evidence": [
+        "design"
+      ],
+      "deployment": {
+        "posture": "Browser / mobile"
+      }
+    },
+    {
+      "id": "frontdoor",
+      "label": "Azure Front Door",
+      "kind": "edge",
+      "provider": "azure",
+      "evidence": [
+        "design"
+      ],
+      "deployment": {
+        "posture": "Premium | global WAF",
+        "sku": "Premium_AzureFrontDoor",
+        "scope": "global",
+        "resourceType": "Microsoft.Cdn/profiles",
+        "apiVersion": "2023-05-01",
+        "bicep": "// Skeleton: endpoints, origins, routes and WAF policy omitted\nresource edge 'Microsoft.Cdn/profiles@2023-05-01' = {\n  name: 'enterprise-edge'\n  location: 'global'\n  sku: { name: 'Premium_AzureFrontDoor' }\n}"
+      }
+    },
+    {
+      "id": "entra",
+      "label": "Microsoft Entra ID",
+      "kind": "identity",
+      "provider": "azure",
+      "evidence": [
+        "design"
+      ],
+      "deployment": {
+        "posture": "OIDC / PKCE",
+        "scope": "global",
+        "auth": "OIDC authorization code with PKCE"
+      }
+    },
+    {
+      "id": "monitor",
+      "label": "Azure Monitor",
+      "kind": "monitor",
+      "provider": "azure",
+      "evidence": [
+        "design"
+      ],
+      "deployment": {
+        "posture": "Logs | metrics | traces",
+        "scope": "global"
+      }
+    },
+    {
+      "id": "region-a",
+      "label": "Region A \u2014 primary deployment",
+      "kind": "boundary",
+      "provider": "azure",
+      "evidence": [
+        "design"
+      ],
+      "deployment": {
+        "scope": "regional"
+      }
+    },
+    {
+      "id": "gateway-a",
+      "label": "Application Gateway",
+      "kind": "gateway",
+      "provider": "azure",
+      "evidence": [
+        "design"
+      ],
+      "deployment": {
+        "posture": "WAF_v2 | active",
+        "sku": "WAF_v2",
+        "scope": "regional",
+        "networkAccess": "Dedicated gateway subnet",
+        "scaling": "Autoscale bounds require sizing"
+      },
+      "parent": "region-a"
+    },
+    {
+      "id": "web-a",
+      "label": "App Service \u00b7 Web",
+      "kind": "service",
+      "provider": "azure",
+      "evidence": [
+        "design"
+      ],
+      "deployment": {
+        "posture": "Private inbound endpoint",
+        "networkAccess": "Private endpoint inbound; VNet integration outbound",
+        "resourceType": "Microsoft.Web/sites",
+        "auth": "Managed identity proposed"
+      },
+      "parent": "region-a"
+    },
+    {
+      "id": "apim-a",
+      "label": "API Management",
+      "kind": "api",
+      "provider": "azure",
+      "evidence": [
+        "design"
+      ],
+      "deployment": {
+        "posture": "Premium | internal VNet",
+        "sku": "Premium",
+        "networkAccess": "Internal VNet mode; verify regional support"
+      },
+      "parent": "region-a"
+    },
+    {
+      "id": "api-a",
+      "label": "App Service \u00b7 API",
+      "kind": "service",
+      "provider": "azure",
+      "evidence": [
+        "design"
+      ],
+      "deployment": {
+        "posture": "Stateless | VNet integrated",
+        "networkAccess": "Private inbound; VNet integration outbound",
+        "auth": "Managed identity proposed",
+        "resourceType": "Microsoft.Web/sites"
+      },
+      "parent": "region-a"
+    },
+    {
+      "id": "sql-a",
+      "label": "Azure SQL Database",
+      "kind": "database",
+      "provider": "azure",
+      "evidence": [
+        "design"
+      ],
+      "deployment": {
+        "posture": "Primary | single writer",
+        "networkAccess": "Private endpoint",
+        "resourceType": "Microsoft.Sql/servers/databases"
+      },
+      "parent": "region-a"
+    },
+    {
+      "id": "vault-a",
+      "label": "Azure Key Vault",
+      "kind": "secret",
+      "provider": "azure",
+      "evidence": [
+        "design"
+      ],
+      "deployment": {
+        "posture": "Private endpoint | RBAC",
+        "networkAccess": "Managed PaaS through VNet private endpoint; public access disabled",
+        "auth": "Managed identity + RBAC",
+        "resourceType": "Microsoft.KeyVault/vaults"
+      },
+      "parent": "region-a"
+    },
+    {
+      "id": "region-b",
+      "label": "Region B \u2014 warm standby deployment",
+      "kind": "boundary",
+      "provider": "azure",
+      "evidence": [
+        "design"
+      ],
+      "deployment": {
+        "scope": "regional"
+      }
+    },
+    {
+      "id": "gateway-b",
+      "label": "Application Gateway",
+      "kind": "gateway",
+      "provider": "azure",
+      "evidence": [
+        "design"
+      ],
+      "deployment": {
+        "posture": "WAF_v2 | warm standby",
+        "sku": "WAF_v2",
+        "scope": "regional",
+        "networkAccess": "Dedicated gateway subnet",
+        "scaling": "Autoscale bounds require sizing",
+        "recovery": {
+          "detectionSeconds": 30,
+          "routingSeconds": 30,
+          "promotionSeconds": 120,
+          "warmupSeconds": 60,
+          "replicationLagSeconds": 5,
+          "basis": "Illustrative assumed recovery stages; drill and capacity tests required"
+        }
+      },
+      "parent": "region-b"
+    },
+    {
+      "id": "web-b",
+      "label": "App Service \u00b7 Web",
+      "kind": "service",
+      "provider": "azure",
+      "evidence": [
+        "design"
+      ],
+      "deployment": {
+        "posture": "Private inbound endpoint",
+        "networkAccess": "Private endpoint inbound; VNet integration outbound",
+        "resourceType": "Microsoft.Web/sites",
+        "auth": "Managed identity proposed"
+      },
+      "parent": "region-b"
+    },
+    {
+      "id": "apim-b",
+      "label": "API Management",
+      "kind": "api",
+      "provider": "azure",
+      "evidence": [
+        "design"
+      ],
+      "deployment": {
+        "posture": "Premium | internal VNet",
+        "sku": "Premium",
+        "networkAccess": "Internal VNet mode; verify regional support"
+      },
+      "parent": "region-b"
+    },
+    {
+      "id": "api-b",
+      "label": "App Service \u00b7 API",
+      "kind": "service",
+      "provider": "azure",
+      "evidence": [
+        "design"
+      ],
+      "deployment": {
+        "posture": "Stateless | VNet integrated",
+        "networkAccess": "Private inbound; VNet integration outbound",
+        "auth": "Managed identity proposed",
+        "resourceType": "Microsoft.Web/sites"
+      },
+      "parent": "region-b"
+    },
+    {
+      "id": "sql-b",
+      "label": "Azure SQL Database",
+      "kind": "database",
+      "provider": "azure",
+      "evidence": [
+        "design"
+      ],
+      "deployment": {
+        "posture": "Geo-secondary | promote",
+        "networkAccess": "Private endpoint",
+        "resourceType": "Microsoft.Sql/servers/databases"
+      },
+      "parent": "region-b"
+    },
+    {
+      "id": "vault-b",
+      "label": "Azure Key Vault",
+      "kind": "secret",
+      "provider": "azure",
+      "evidence": [
+        "design"
+      ],
+      "deployment": {
+        "posture": "Private endpoint | RBAC",
+        "networkAccess": "Managed PaaS through VNet private endpoint; public access disabled",
+        "auth": "Managed identity + RBAC",
+        "resourceType": "Microsoft.KeyVault/vaults"
+      },
+      "parent": "region-b"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "flow-access",
+      "from": "users",
+      "to": "frontdoor",
+      "label": "HTTPS / application",
+      "kind": "sync",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "flow-signin",
+      "from": "users",
+      "to": "entra",
+      "label": "OIDC / PKCE",
+      "kind": "control",
+      "evidence": [
+        "design"
+      ],
+      "dependency": "optional"
+    },
+    {
+      "id": "flow-edge-a",
+      "from": "frontdoor",
+      "to": "gateway-a",
+      "label": "HTTPS / primary",
+      "kind": "sync",
+      "evidence": [
+        "design"
+      ],
+      "dependency": "fallback",
+      "group": "regional-ingress"
+    },
+    {
+      "id": "flow-web-a",
+      "from": "gateway-a",
+      "to": "web-a",
+      "label": "/* HTTPS",
+      "kind": "sync",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "flow-apim-a",
+      "from": "gateway-a",
+      "to": "apim-a",
+      "label": "/api/* HTTPS",
+      "kind": "sync",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "flow-token-a",
+      "from": "web-a",
+      "to": "apim-a",
+      "label": "HTTPS + token",
+      "kind": "sync",
+      "evidence": [
+        "design"
+      ],
+      "controls": {
+        "layoutBackchannel": true
+      }
+    },
+    {
+      "id": "flow-api-a",
+      "from": "apim-a",
+      "to": "api-a",
+      "label": "/api/* HTTPS",
+      "kind": "sync",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "flow-sql-a",
+      "from": "api-a",
+      "to": "sql-a",
+      "label": "SQL / TLS",
+      "kind": "sync",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "flow-secret-a",
+      "from": "api-a",
+      "to": "vault-a",
+      "label": "MI / HTTPS",
+      "kind": "control",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "flow-cert-a",
+      "from": "gateway-a",
+      "to": "vault-a",
+      "label": "TLS certificate",
+      "kind": "control",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "flow-telemetry-gateway-a",
+      "from": "gateway-a",
+      "to": "monitor",
+      "label": "Traces / metrics",
+      "kind": "telemetry",
+      "evidence": [
+        "design"
+      ],
+      "dependency": "optional"
+    },
+    {
+      "id": "flow-telemetry-apim-a",
+      "from": "apim-a",
+      "to": "monitor",
+      "label": "Traces / metrics",
+      "kind": "telemetry",
+      "evidence": [
+        "design"
+      ],
+      "dependency": "optional"
+    },
+    {
+      "id": "flow-telemetry-web-a",
+      "from": "web-a",
+      "to": "monitor",
+      "label": "Traces / metrics",
+      "kind": "telemetry",
+      "evidence": [
+        "design"
+      ],
+      "dependency": "optional"
+    },
+    {
+      "id": "flow-telemetry-api-a",
+      "from": "api-a",
+      "to": "monitor",
+      "label": "Traces / metrics",
+      "kind": "telemetry",
+      "evidence": [
+        "design"
+      ],
+      "dependency": "optional"
+    },
+    {
+      "id": "flow-edge-b",
+      "from": "frontdoor",
+      "to": "gateway-b",
+      "label": "HTTPS / failover",
+      "kind": "sync",
+      "evidence": [
+        "design"
+      ],
+      "dependency": "fallback",
+      "group": "regional-ingress"
+    },
+    {
+      "id": "flow-web-b",
+      "from": "gateway-b",
+      "to": "web-b",
+      "label": "/* HTTPS",
+      "kind": "sync",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "flow-apim-b",
+      "from": "gateway-b",
+      "to": "apim-b",
+      "label": "/api/* HTTPS",
+      "kind": "sync",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "flow-token-b",
+      "from": "web-b",
+      "to": "apim-b",
+      "label": "HTTPS + token",
+      "kind": "sync",
+      "evidence": [
+        "design"
+      ],
+      "controls": {
+        "layoutBackchannel": true
+      }
+    },
+    {
+      "id": "flow-api-b",
+      "from": "apim-b",
+      "to": "api-b",
+      "label": "/api/* HTTPS",
+      "kind": "sync",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "flow-sql-b",
+      "from": "api-b",
+      "to": "sql-b",
+      "label": "SQL / TLS",
+      "kind": "sync",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "flow-secret-b",
+      "from": "api-b",
+      "to": "vault-b",
+      "label": "MI / HTTPS",
+      "kind": "control",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "flow-cert-b",
+      "from": "gateway-b",
+      "to": "vault-b",
+      "label": "TLS certificate",
+      "kind": "control",
+      "evidence": [
+        "design"
+      ]
+    },
+    {
+      "id": "flow-telemetry-gateway-b",
+      "from": "gateway-b",
+      "to": "monitor",
+      "label": "Traces / metrics",
+      "kind": "telemetry",
+      "evidence": [
+        "design"
+      ],
+      "dependency": "optional"
+    },
+    {
+      "id": "flow-telemetry-apim-b",
+      "from": "apim-b",
+      "to": "monitor",
+      "label": "Traces / metrics",
+      "kind": "telemetry",
+      "evidence": [
+        "design"
+      ],
+      "dependency": "optional"
+    },
+    {
+      "id": "flow-telemetry-web-b",
+      "from": "web-b",
+      "to": "monitor",
+      "label": "Traces / metrics",
+      "kind": "telemetry",
+      "evidence": [
+        "design"
+      ],
+      "dependency": "optional"
+    },
+    {
+      "id": "flow-telemetry-api-b",
+      "from": "api-b",
+      "to": "monitor",
+      "label": "Traces / metrics",
+      "kind": "telemetry",
+      "evidence": [
+        "design"
+      ],
+      "dependency": "optional"
+    },
+    {
+      "id": "flow-replication",
+      "from": "sql-a",
+      "to": "sql-b",
+      "label": "Async geo-replication",
+      "kind": "replication",
+      "evidence": [
+        "design"
+      ],
+      "dependency": "optional"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "design",
+      "kind": "proposed",
+      "source": "Enterprise Azure web application requirements; illustrative target",
+      "retrievedAt": "2026-11-09",
+      "conditions": "No deployed topology or measured recovery evidence supplied"
+    }
+  ],
+  "assumptions": [
+    "Two permitted Azure regions and budget for warm standby are assumed; validate residency and SKU availability.",
+    "Web/API are logical roles; distinct App Service plans are not implied.",
+    "Regional boundaries are deployment scopes, not VNet injection claims. Private endpoints and DNS require separate implementation.",
+    "Recovery timing is illustrative serial detection + routing + promotion + warmup; replication lag is an assumption.",
+    "Front Door origins and App Gateway access restrictions require compatibility validation; this model is not deployment certification."
+  ]
+}

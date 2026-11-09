@@ -3,3 +3,6 @@ dist/
 artifacts/
 .cache/
 *.tgz
+
+__pycache__/
+*.pyc

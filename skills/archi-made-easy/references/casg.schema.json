@@ -360,6 +360,78 @@
         },
         "role": {
           "type": "string"
+        },
+        "deployment": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "posture": {
+              "type": "string"
+            },
+            "sku": {
+              "type": "string"
+            },
+            "networkAccess": {
+              "type": "string"
+            },
+            "auth": {
+              "type": "string"
+            },
+            "scaling": {
+              "type": "string"
+            },
+            "availabilityTarget": {
+              "type": "string"
+            },
+            "resourceType": {
+              "type": "string"
+            },
+            "apiVersion": {
+              "type": "string"
+            },
+            "bicep": {
+              "type": "string"
+            },
+            "terraform": {
+              "type": "string"
+            },
+            "scope": {
+              "enum": [
+                "global",
+                "regional",
+                "network"
+              ]
+            },
+            "recovery": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "detectionSeconds": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "routingSeconds": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "promotionSeconds": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "warmupSeconds": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "replicationLagSeconds": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "basis": {
+                  "type": "string"
+                }
+              }
+            }
+          }
         }
       }
     },
