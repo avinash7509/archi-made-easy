@@ -1,21 +1,15 @@
-# Compact skill package
+# Compact master workbench
 
-This package deliberately contains only root SKILL.md plus agents/, references/, and scripts/. Upload the whole compact ZIP; do not remove the schema or example from references/.
-
-The host needs Python 3.9+ execution and access to the extracted files. No Node, npm, browser download, or Python library installation is required for HTML/SVG/draw.io/CASG.
-
-First-run prompt:
-
-> Read SKILL.md. Use scripts/render_workbench.py. Build a proposed CASG with meaningful component kinds, explicit proposed controls and evidence, and focused views of at most eight nodes. Separate MCP from downstream REST, identity and telemetry. Use references/mcp-enterprise.casg.json as a format example, not an assertion about my system. Generate the interactive workbench and editable draw.io, then provide actual download links to both and the CASG/SVG. State missing checks and formats.
-
-Offline self-test:
+Upload the entire compact ZIP: SKILL.md, agents/, references/ and scripts/. Python 3.9+ generates the complete architecture without Node or downloads.
 
 ```sh
 python scripts/render_workbench.py references/mcp-enterprise.casg.json --out output
 ```
 
-Open output/archi-workbench.html. Its view selector includes protocol, REST, identity/security, monitoring and trust-scope views. Draw.io contains corresponding pages. Failure inspection uses the entire model, including hidden dependencies. Large views are partitioned; connector detail pages retain cross-view relationships.
+Open output/archi-workbench.html. The default master includes every component, dependency and parent-defined boundary. Lenses dim unrelated elements without removing nodes. The sequence list focuses relationships. Use wheel zoom, background drag, search, Fit View, Reset Filter and Minimap.
 
-The renderer colors cards by architectural role, with a matching legend: experience (teal), intelligence/MCP (purple), APIs (blue), security (amber), enterprise/data (green), operations (cyan). These are role labels, not compliance scores or official vendor branding. Failure highlights remain red/amber. Preserve readable labels as well as colors.
+Use CASG components with kind=boundary and parent IDs for cloud, region, network, subnet or trust containers. These names denote scope semantics; containment alone is not a security control. Cards show a name and role; inspect controls, evidence and assumptions in the drawer.
 
-This is the restricted Python renderer, not the Node policy engine. It does not run WAF assessments, full schema validation, availability calculations, nested trust-zone rendering, or full semantic draw.io round trips. Scope labels and the original CASG preserve boundaries. PNG requires preinstalled Pillow/font; SVG/HTML remain available without it. Hosted-agent compatibility still depends on actual execution and attachment tools.
+Failure mode evaluates required, optional, fallback, quorum and buffered dependencies in the browser. Red is the selected source, amber indicates impact, green indicates unaffected nodes, and dashed blue shows surviving fallback/quorum connections. Capacity and failover timing are not validated.
+
+Deliver architecture-master.svg, archi-workbench.html, architecture.drawio, casg-model.json and architecture-artifacts.zip. PNG requires installed CairoSVG, Resvg or Chromium; inspect receipt.json. No WAF, full JSON Schema or availability engine runs in this restricted renderer. Dense graphs and label placement still require visual review. Role colors are not compliance scores.

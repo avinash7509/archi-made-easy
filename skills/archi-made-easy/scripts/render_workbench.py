@@ -59,109 +59,101 @@ def failure(model, initial):
 
 
 def scene(model):
-    # Compact multi-column placement; route only through reserved row/column gutters.
-    edges = model['relationships']
     nodes = model['components']
-    cols = min(3, max(1, len(nodes)))
-    gap = 100 + len(edges) * 6
-    top_gap = 55 + len(edges) * 8
     boxes = []
-    parent_names = model.get('_scopeLabels', {n['id']: n['label'] for n in nodes})
-    for i, n in enumerate(nodes):
-        controls = ', '.join(re.sub(r'(?<!^)(?=[A-Z])', ' ', k).lower() for k, v in n.get('controls', {}).items() if v is True)
-        context = ' / '.join(filter(None, [n.get('service'), n['kind']]))
-        lines = textwrap.wrap(n['label'], 28) + textwrap.wrap(context, 28)
-        if n['kind'] != 'actor' and n['kind'] != 'boundary':
-            control_lines = textwrap.wrap(('Proposed: ' if model.get('mode') == 'target' else 'Declared: ') + (controls or 'controls unspecified'), 28)
-            lines += control_lines[:2]
-            if len(control_lines) > 2:
-                lines[-1] = lines[-1][:24] + ' ...'
-        if n.get('parent'):
-            lines += textwrap.wrap('Scope: ' + parent_names.get(n['parent'], n['parent']), 28)
-        boxes.append({'id': n['id'], 'x': 60 + len(edges)*3 + (i % cols) * (300 + gap), 'y': 0, 'width': 300, 'height': max(48 + len(lines) * 22, 60 + 18*sum(e['from']==n['id'] or e['to']==n['id'] for e in edges)), 'lines': lines, 'row': i // cols})
-    y = 180 + top_gap
-    for row in range((len(boxes) + cols - 1) // cols):
-        members = [b for b in boxes if b['row'] == row]
-        height = max(b['height'] for b in members)
-        for b in members:
-            b['y'], b['height'] = y, height
-        y += height + top_gap
-    byid = {b['id']: b for b in boxes}
-    routes = []
-    ports = {}
-    for i, e in enumerate(edges):
-        a, b = byid[e['from']], byid[e['to']]
-        ak, bk = (a['id'], 'out'), (b['id'], 'in')
-        ay, by = a['y'] + 35 + 18*ports.get(ak, 0), b['y'] + 35 + 18*ports.get(bk, 0)
-        ports[ak] = ports.get(ak, 0)+1
-        ports[bk] = ports.get(bk, 0)+1
-        sx, tx = a['x'] + a['width'], b['x']
-        right, left = sx + 38 + i*3, tx - 38 - i*3
-        lane = min(a['y'], b['y']) - 25 - i*8
-        if a['row'] == b['row'] and b['x'] > a['x'] and b['x'] - a['x'] <= 300 + gap:
-            mid = (sx + tx)/2
-            points = [[sx, ay], [mid, ay], [mid, by], [tx, by]]
-        else:
-            points = [[sx, ay], [right, ay], [right, lane], [left, lane], [left, by], [tx, by]]
-        label = e.get('label', '')
-        color = '#7c3aed' if 'MCP' in label.upper() else '#0284c7' if 'REST' in label.upper() else {'control':'#b45309','telemetry':'#64748b','async':'#0f766e'}.get(e['kind'], '#475569')
-        routes.append({'id': e['id'], 'points': points, 'number': i+1, 'kind': e['kind'], 'color': color})
-    return {'boxes': boxes, 'routes': routes, 'width': max(1000, max(b['x']+b['width'] for b in boxes)+gap), 'height': y+20}
+    def place(parent, x, y):
+        children = [n for n in nodes if n.get('parent') == parent]
+        cursor_y = y
+        max_x = x
+        for start in range(0, len(children), 3):
+            cursor_x, row_height = x, 0
+            for n in children[start:start+3]:
+                compound = any(c.get('parent') == n['id'] for c in nodes) or n['kind'] == 'boundary'
+                box = {'id':n['id'],'x':cursor_x,'y':cursor_y,'width':300,'height':100,'lines':[textwrap.shorten(n['label'],width=30,placeholder='…'), textwrap.shorten(n.get('service') or n['kind'],width=32,placeholder='…')], 'boundary':compound, 'parent':parent, 'row':cursor_y}
+                boxes.append(box)
+                if compound:
+                    width,height = place(n['id'],cursor_x+35,cursor_y+65)
+                    box['width'],box['height'] = max(370,width+70),max(165,height+100)
+                cursor_x += box['width']+100
+                row_height = max(row_height,box['height'])
+                max_x = max(max_x,cursor_x-100)
+            cursor_y += row_height+100
+        return max_x-x, max(0,cursor_y-y-100)
+    width,height=place(None,70,200)
+    byid={b['id']:b for b in boxes}
+    # Visibility-grid routing avoids leaf interiors; shared lanes remain explicit.
+    obstacles=[b for b in boxes if not b['boundary']]
+    routes=[]
+    import heapq
+    for i,e in enumerate(model['relationships']):
+        a,b=byid[e['from']],byid[e['to']]
+        start=(a['x']+a['width'],a['y']+a['height']/2)
+        end=(b['x'],b['y']+b['height']/2)
+        xs=sorted(set([start[0],end[0]]+[v for n in boxes for v in (n['x']-20,n['x']+n['width']+20)]))
+        ys=sorted(set([start[1],end[1]]+[v for n in boxes for v in (n['y']-20,n['y']+n['height']+20)]))
+        def clear(p,q):
+            for n in obstacles:
+                if p[0]==q[0] and n['x']<p[0]<n['x']+n['width'] and max(p[1],q[1])>n['y'] and min(p[1],q[1])<n['y']+n['height']:return False
+                if p[1]==q[1] and n['y']<p[1]<n['y']+n['height'] and max(p[0],q[0])>n['x'] and min(p[0],q[0])<n['x']+n['width']:return False
+            return True
+        initial=(xs.index(start[0]),ys.index(start[1]),-1)
+        queue=[(0,initial)];cost={initial:0};prev={};last=None
+        while queue:
+            distance,state=heapq.heappop(queue)
+            if distance!=cost[state]:continue
+            ix,iy,direction=state;p0=(xs[ix],ys[iy])
+            if p0==end:last=state;break
+            for dx,dy,di in [(1,0,0),(-1,0,0),(0,1,1),(0,-1,1)]:
+                nx,ny=ix+dx,iy+dy
+                if not(0<=nx<len(xs) and 0<=ny<len(ys)):continue
+                q=(xs[nx],ys[ny])
+                if not clear(p0,q):continue
+                nxt=(nx,ny,di);value=distance+abs(p0[0]-q[0])+abs(p0[1]-q[1])+(25 if direction not in (-1,di) else 0)
+                if value<cost.get(nxt,float('inf')):cost[nxt]=value;prev[nxt]=state;heapq.heappush(queue,(value,nxt))
+        points=[]
+        if last is None:raise ValueError('Unable to route relationship '+e['id'])
+        while True:
+            points.append([xs[last[0]],ys[last[1]]])
+            if last not in prev:break
+            last=prev[last]
+        points.reverse()
+        label=e.get('protocol') or e.get('label') or e['kind']
+        protocol=next((p for p in ['MCP','HTTPS','gRPC','AMQP','OIDC','OAuth','SQL','REST'] if p.lower() in label.lower()),e['kind'])
+        color={'async':'#0f766e','control':'#b45309','telemetry':'#64748b'}.get(e['kind'],'#7c3aed' if protocol=='MCP' else '#0284c7')
+        routes.append({'id':e['id'],'points':points,'number':i+1,'kind':e['kind'],'color':color,'protocol':protocol})
+    occupied=[]
+    for r in routes:
+        candidates=[]
+        for a,b in zip(r['points'],r['points'][1:]):
+            for fraction in (.5,.25,.75):
+                x=a[0]+(b[0]-a[0])*fraction-32;y=a[1]+(b[1]-a[1])*fraction-11
+                candidates.append((x,y))
+        def overlaps(a,b):return a[0]<b[0]+b[2] and a[0]+a[2]>b[0] and a[1]<b[1]+b[3] and a[1]+a[3]>b[1]
+        for x,y in candidates:
+            rectangle=(x,y,64,22)
+            if any(overlaps(rectangle,(b['x'],b['y'],b['width'],b['height'])) for b in obstacles):continue
+            if any(overlaps(rectangle,other) for other in occupied):continue
+            r['labelX'],r['labelY']=x,y;occupied.append((x-4,y-4,72,30));break
+        if 'labelX' not in r:
+            r['labelX'],r['labelY']=r['points'][0][0]+8,r['points'][0][1]-11
+            r['labelWarning']='Protocol label placement requires review'
+    return {'boxes':boxes,'routes':routes,'width':max(1100,width+140),'height':height+280}
 
 
 def view_models(model):
-    # Explicit views first; partition large views rather than shrink text indefinitely.
-    definitions = model.get('views') or [{'id':'overview','label':'Architecture overview','nodes':[n['id'] for n in model['components']]}]
-    result = []
-    for view in definitions:
-        ids = view.get('nodes', [n['id'] for n in model['components']])
-        for start in range(0, len(ids), 8):
-            selected = set(ids[start:start+8])
-            subset = dict(model)
-            subset['_scopeLabels'] = {n['id']:n['label'] for n in model['components']}
-            subset['components'] = [n for n in model['components'] if n['id'] in selected]
-            subset['relationships'] = [e for e in model['relationships'] if e['from'] in selected and e['to'] in selected]
-            title = view.get('label', view['id']) + (f' · part {start//8+1}' if len(ids)>8 else '')
-            result.append((title, subset))
-    covered = {e['id'] for _, subset in result for e in subset['relationships']}
-    for e in model['relationships']:
-        if e['id'] not in covered:
-            subset = dict(model)
-            subset['_scopeLabels'] = {n['id']:n['label'] for n in model['components']}
-            subset['components'] = [n for n in model['components'] if n['id'] in (e['from'], e['to'])]
-            subset['relationships'] = [e]
-            result.append(('Connection · '+e.get('label', e['id']), subset))
-    shown = {n['id'] for _, subset in result for n in subset['components']}
-    missing = [n for n in model['components'] if n['id'] not in shown]
-    for start in range(0, len(missing), 8):
-        subset = dict(model)
-        subset['_scopeLabels'] = {n['id']:n['label'] for n in model['components']}
-        subset['components'] = missing[start:start+8]
-        subset['relationships'] = []
-        result.append(('Additional components', subset))
-    return result
+    return [('Full Master Architecture',model)]
 
 
 def theme(node):
-    label = (node.get('label', '') + ' ' + node.get('service', '')).lower()
-    kind = node.get('kind', '')
-    if kind == 'boundary':
-        return ('Trust scope', '#475569', '#e2e8f0')
-    if kind == 'actor' or 'copilot' in label:
-        return ('Experience', '#0f766e', '#ccfbf1')
-    if kind in ('ai', 'llm') or 'orchestrat' in label:
-        return ('Intelligence', '#7e22ce', '#f3e8ff')
-    if kind == 'identity' or any(k in label for k in ('key vault', 'entra', 'identity', 'secret')):
-        return ('Security', '#92400e', '#fef3c7')
-    if any(k in label for k in ('monitor', 'telemetry', 'observability')):
-        return ('Operations', '#0e7490', '#cffafe')
-    if 'mcp' in label:
-        return ('MCP protocol', '#5b21b6', '#ede9fe')
-    if kind == 'api' or 'api management' in label:
-        return ('API integration', '#1d4ed8', '#dbeafe')
-    if any(k in label for k in ('sap', 'servicenow', 'salesforce')) or kind in ('database', 'storage', 'queue'):
-        return ('Enterprise / data', '#166534', '#dcfce7')
-    return ('Service', '#334155', '#f1f5f9')
+    kind=node.get('kind','').lower()
+    if kind=='boundary':return ('Boundary / scope','#475569','#e2e8f0')
+    if kind in ('actor','external'):return ('Actor / external','#0f766e','#ccfbf1')
+    if kind in ('api','gateway','edge','loadbalancer'):return ('Edge / gateway','#1d4ed8','#dbeafe')
+    if kind in ('queue','broker','stream','messaging'):return ('Messaging','#9d174d','#fce7f3')
+    if kind in ('database','storage','cache'):return ('Database / storage','#166534','#dcfce7')
+    if kind in ('identity','security','secret') or 'vault' in node.get('label','').lower():return ('Security / identity','#92400e','#fef3c7')
+    if kind in ('monitor','observability','management') or 'monitor' in node.get('label','').lower():return ('Operations','#0e7490','#cffafe')
+    return ('Compute / workload','#6d28d9','#ede9fe')
 
 
 def svg(model, s):
@@ -176,16 +168,20 @@ def svg(model, s):
         ly = 82 + (i//legend_cols)*34
         parts.append(f'<rect x="{x}" y="{ly}" width="160" height="28" rx="14" fill="{tint}"/><circle cx="{x+14}" cy="{ly+14}" r="5" fill="{accent}"/><text x="{x+26}" y="{ly+19}" font-size="13" font-weight="700" fill="{accent}">{esc(role)}</text>')
     parts.append(f'<text x="30" y="{137+34*((len(roles)-1)//legend_cols)}" font-size="14" fill="#475569">Flows: purple MCP · blue REST · amber control · dashed non-sync · gaps denote crossings</text>')
+    for b in s['boxes']:
+        if b.get('boundary'):
+            parts.append(f'<g class="node boundary" data-id="{esc(b["id"])}"><rect class="card" x="{b["x"]}" y="{b["y"]}" width="{b["width"]}" height="{b["height"]}" rx="12" fill="#e2e8f0" fill-opacity=".35" stroke="#64748b" stroke-dasharray="8 4"/><text x="{b["x"]+16}" y="{b["y"]+28}" font-size="16">{esc(nodes[b["id"]]["label"])}</text></g>')
     for i,r in enumerate(s['routes']):
         d = ' '.join(('M' if j == 0 else 'L') + f'{p[0]} {p[1]}' for j, p in enumerate(r['points']))
-        dash = '' if r['kind'] == 'sync' else 'stroke-dasharray="8 5"'
-        parts.append(f'<path d="{d}" fill="none" stroke="#f8fafc" stroke-width="9"/><path d="{d}" fill="none" stroke="{r["color"]}" stroke-width="3" {dash} marker-end="url(#arrow-{i})"/>')
-        px, py = r['points'][0]
-        parts.append(f'<rect x="{px+4}" y="{py-11}" width="26" height="22" rx="6" fill="{r["color"]}"/><text x="{px+17}" y="{py+5}" text-anchor="middle" font-size="13" font-weight="700" fill="white">{r["number"]}</text>')
+        dash = '' if r['kind']=='sync' else 'stroke-dasharray="6 4"' if r['kind']=='async' else 'stroke-dasharray="3 3"'
+        parts.append(f'<g class="edge" data-edge="{esc(r["id"])}"><path d="{d}" fill="none" stroke="#f8fafc" stroke-width="9"/><path d="{d}" fill="none" stroke="{r["color"]}" stroke-width="{2 if r["kind"] in ("sync","async") else 1.5}" {dash} marker-end="url(#arrow-{i})"/>')
+        px, py = r['labelX']-4,r['labelY']+11
+        parts.append(f'<rect x="{px+4}" y="{py-11}" width="64" height="22" rx="6" fill="{r["color"]}"/><text x="{px+36}" y="{py+5}" text-anchor="middle" font-size="13" font-weight="700" fill="white">{esc(r["protocol"])}</text></g>')
     for b in s['boxes']:
+        if b.get('boundary'):continue
         node = nodes[b['id']]
         role, accent, tint = theme(node)
-        title_count = len(textwrap.wrap(node['label'],28))
+        title_count = 1
         hh = 20 + title_count*22
         x,y,w = b['x'],b['y'],b['width']
         parts.append(f'<g class="node" data-id="{esc(b["id"], quote=True)}" tabindex="0" role="button" aria-label="{esc(node["label"], quote=True)}"><rect class="card" x="{x}" y="{y}" width="{w}" height="{b["height"]}" rx="10" fill="{tint}" stroke="{accent}" stroke-width="1.5"/><path d="M{x+10} {y} H{x+w-10} Q{x+w} {y} {x+w} {y+10} V{y+hh} H{x} V{y+10} Q{x} {y} {x+10} {y}Z" fill="{accent}"/>')
@@ -205,10 +201,12 @@ def drawio(model, s):
     ET.SubElement(root, 'mxCell', id='1', parent='0')
     ids = {n['id']: 'n-' + n['id'] for n in model['components']}
     nodes = {n['id']:n for n in model['components']}
+    geometry_by_id = {b['id']:b for b in s['boxes']}
     for b in s['boxes']:
+        parent = geometry_by_id.get(b.get('parent'))
         role, accent, tint = theme(nodes[b['id']])
-        cell = ET.SubElement(root, 'mxCell', id=ids[b['id']], value='\n'.join(b['lines']), vertex='1', parent='1', style=f'rounded=1;whiteSpace=wrap;html=0;fontSize=16;fontColor=#1e293b;fillColor={tint};strokeColor={accent};strokeWidth=2;', semanticId=b['id'])
-        ET.SubElement(cell, 'mxGeometry', x=str(b['x']), y=str(b['y']), width=str(b['width']), height=str(b['height']), attrib={'as': 'geometry'})
+        cell = ET.SubElement(root, 'mxCell', id=ids[b['id']], value='\n'.join(b['lines']), vertex='1', parent=ids[b['parent']] if parent else '1', style=f'rounded=1;whiteSpace=wrap;html=0;fontSize=16;fontColor=#1e293b;fillColor={tint};strokeColor={accent};strokeWidth=2;', semanticId=b['id'])
+        ET.SubElement(cell, 'mxGeometry', x=str(b['x']-(parent['x'] if parent else 0)), y=str(b['y']-(parent['y'] if parent else 0)), width=str(b['width']), height=str(b['height']), attrib={'as': 'geometry'})
     byid = {b['id']:b for b in s['boxes']}
     for e, r in zip(model['relationships'], s['routes']):
         a, b = byid[e['from']], byid[e['to']]
@@ -243,7 +241,7 @@ def deliver(models, out):
         scoped = view_models(model)
         s = scene(scoped[0][1])
         prefix = '' if i == len(models) - 1 else 'as-is-'
-        artifacts = {prefix+'architecture.svg': svg(model, s), prefix+'architecture.drawio': drawio(scoped[0][1], s), prefix+'casg-model.json': json.dumps(model, indent=2), prefix+'scene.json': json.dumps(s, indent=2)}
+        artifacts = {prefix+'architecture-master.svg': svg(model, s), prefix+'architecture.svg': svg(model, s), prefix+'architecture.drawio': drawio(scoped[0][1], s), prefix+'casg-model.json': json.dumps(model, indent=2), prefix+'scene.json': json.dumps(s, indent=2)}
         for name, value in artifacts.items():
             (out/name).write_text(value, encoding='utf-8')
             files.append(name)
@@ -262,36 +260,38 @@ def deliver(models, out):
         (out/(prefix+'view-scenes.json')).write_text(json.dumps(measured_views, indent=2), encoding='utf-8')
         files.append(prefix+'view-scenes.json')
         (out/(prefix+'architecture.drawio')).write_text(ET.tostring(combined, encoding='unicode'), encoding='utf-8')
+    # Rasterize the actual master SVG, never reconstruct it as a different drawing.
+    import shutil, subprocess
+    for prefix in (['as-is-', ''] if len(models)>1 else ['']):
+        source=out/(prefix+'architecture-master.svg'); destination=out/(prefix+'architecture-master.png')
+        error='No installed CairoSVG, Resvg or Chromium rasterizer'
         try:
-            from PIL import Image, ImageDraw, ImageFont
-            image = Image.new('RGB', (s['width'], s['height']), 'white')
-            draw = ImageDraw.Draw(image)
-            font = ImageFont.truetype('DejaVuSans.ttf', 16)
-            draw.text((30, 30), 'Archi-Made-Easy | restricted-host preview', fill='#172033', font=font)
-            for r in s['routes']:
-                pts = [tuple(p) for p in r['points']]
-                draw.line(pts, fill='white', width=7)
-                draw.line(pts, fill=r['color'], width=2)
-                x, y = pts[-1]
-                draw.polygon([(x, y), (x-9, y-5), (x-9, y+5)], fill='#475569')
-                draw.text((pts[0][0]-30, pts[0][1]-18), str(r['number']), fill='#172033', font=font)
-            for b in s['boxes']:
-                role, accent, tint = theme(next(n for n in model['components'] if n['id']==b['id']))
-                draw.rounded_rectangle((b['x'], b['y'], b['x']+b['width'], b['y']+b['height']), radius=8, fill=tint, outline=accent, width=2)
-                for j, line in enumerate(b['lines']):
-                    draw.text((b['x']+18, b['y']+18+j*22), line, fill='#172033', font=font)
-            name = prefix+'architecture.png'
-            image.save(out/name)
-            files.append(name)
-            png.append({'status': 'generated', 'file': name, 'note': 'Screen-resolution preview; SVG is authoritative for flow styles. Not a 300-DPI print export.'})
-        except (ImportError, OSError) as exc:
-            png.append({'status': 'not-generated', 'reason': str(exc), 'alternative': prefix+'architecture.svg'})
+            import cairosvg
+            cairosvg.svg2png(url=str(source),write_to=str(destination))
+        except Exception as exc:
+            error=str(exc)
+        if not destination.exists():
+            executable=shutil.which('resvg')
+            browser=next((shutil.which(name) for name in ['chromium','chromium-browser','google-chrome'] if shutil.which(name)),None)
+            command=[executable,str(source),str(destination)] if executable else [browser,'--headless','--disable-gpu','--hide-scrollbars',f'--screenshot={destination.resolve()}',f'--window-size={s["width"]},{s["height"]}',source.resolve().as_uri()] if browser else None
+            if command:
+                try:
+                    result=subprocess.run(command,capture_output=True,timeout=30)
+                    if result.returncode:error='Installed rasterizer failed'
+                except (OSError,subprocess.TimeoutExpired) as exc:error=str(exc)
+        if destination.exists():
+            files.append(destination.name);png.append({'status':'generated','file':destination.name})
+        else:png.append({'status':'not-generated','reason':error,'alternative':source.name})
     data = json.dumps(tabs).replace('<', '\\u003c').replace('\u2028', '\\u2028').replace('\u2029', '\\u2029')
-    (out/'archi-workbench.html').write_text(PAGE.replace('__DATA__', data), encoding='utf-8')
+    (out/'archi-workbench.html').write_text(PAGE.replace('__DATA__', data).replace('</body>', '').replace('</html>', '<script>'+Path(__file__).with_name('master-interactions.js').read_text(encoding='utf-8')+'</script></html>'), encoding='utf-8')
     files.insert(0, 'archi-workbench.html')
-    receipt = {'renderer': 'python-restricted', 'files': files, 'png': png, 'checks': {'connectivity': 'passed', 'schema': 'not-performed', 'WAF': 'not-performed', 'visualReview': 'not-performed'}, 'limitations': ['Compact scoped views with crossing gaps; cross-view relationships remain in the full CASG and inspector.', 'Scope labels preserve containment facts; draw.io containers and full round-trip metadata are not implemented in fallback.', 'No automatic architectural remediation; supply an agent-authored target with --target.', 'No vendor icons, PDF, capacity simulation or SLA engine in fallback.']}
+    receipt = {'renderer': 'python-restricted', 'files': files, 'png': png, 'checks': {'connectivity': 'passed', 'schema': 'not-performed', 'WAF': 'not-performed', 'visualReview': 'not-performed'}, 'limitations': ['Full master canvas; focus lenses change emphasis without hiding model elements.', 'Nested containment is rendered; complete semantic draw.io round-trip metadata is not implemented in fallback.', 'No automatic architectural remediation; supply an agent-authored target with --target.', 'No vendor icons, PDF, capacity simulation or SLA engine in fallback. Master PNG requires an installed SVG-capable rasterizer.']}
     (out/'receipt.json').write_text(json.dumps(receipt, indent=2), encoding='utf-8')
     (out/'DELIVERABLES.md').write_text('# Generated artifacts\n\n'+'\n'.join(f'- [{name}]({name})' for name in files)+'\n\nPublish these as host-supported attachment/download links. PNG is optional; see receipt.json for missing formats.\n', encoding='utf-8')
+    import zipfile
+    with zipfile.ZipFile(out/'architecture-artifacts.zip','w',zipfile.ZIP_DEFLATED) as archive:
+        for path in sorted(out.iterdir()):
+            if path.is_file() and path.suffix!='.zip':archive.write(path,path.name)
     return receipt
 
 

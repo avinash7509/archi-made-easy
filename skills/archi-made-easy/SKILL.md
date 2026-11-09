@@ -27,7 +27,7 @@ If Node execution is unavailable but Python 3.9+ is available, use the included 
 
 Use the supplied renderers rather than improvising diagonal point-to-point plots. Deployment connectors use orthogonal segments; inspect crossing gaps/bridges and split dense views. Cards show service identity, role/provider context, and declared or proposed controls; unknowns remain explicit. Availability inputs are modeled values unless dated vendor evidence establishes applicable SLA terms. Never add a fixed SLA merely to fill a badge. When rendered inspection is unavailable, report it as not performed rather than asserting collision-free output.
 
-For more than eight components, define focused CASG `views` with explicit node IDs. Separate the business/protocol path from identity, secrets, telemetry and detailed integrations. The Python renderer uses compact columns and partitions large views; it retains cross-view edges in connector detail pages. For MCP work, read `references/mcp-design.md`: distinguish client SDK roles from deployment units and MCP gateway roles from APIM product instances. Label MCP and REST edges explicitly so the renderer distinguishes them visually.
+The compact renderer defaults to one full master architecture containing all components and relationships. Use semantic relationship kinds to drive non-destructive focus lenses, not isolated subgraph pages. Separate the business/protocol path from identity, secrets, telemetry and detailed integrations. Represent trust/network hierarchy using boundary components and parent IDs; the Python renderer encloses descendants in nested containers. Keep cards concise and inspect metadata in the drawer. For MCP work, read `references/mcp-design.md`: distinguish client SDK roles from deployment units and MCP gateway roles from APIM product instances. Label MCP and REST edges explicitly so the renderer distinguishes them visually.
 
 ## Editing and specialist routes
 
@@ -35,3 +35,7 @@ For more than eight components, define focused CASG `views` with explicit node I
 - For SAP, MuleSoft, Databricks and ServiceNow, use `references/enterprise.md` before assigning integration or failure semantics.
 - For ERD/UML/C4 abstractions, use `references/views.md`. The initial runtime has generic graph views, sequence and matrix layouts; do not claim formal notation compliance where specialized symbols are absent.
 - For benchmark claims, use `references/evaluation.md`. Deterministic fixture success does not substitute for model runs or blind review.
+
+## Master delivery contract
+
+Deliver top-level `architecture-master.svg`, `architecture-master.png` when an installed rasterizer succeeds, `archi-workbench.html`, editable `architecture.drawio`, CASG, and `architecture-artifacts.zip`. Link the master SVG/PNG as the inline preview and link the workbench separately. All components must remain mounted when a lens or sequence step is selected. Do not replace the master with an isolated detail view. PNG absence must be reported, not hidden or replaced by an unrelated sketch. Standard Python generates SVG/HTML/draw.io without downloads; PNG requires installed CairoSVG, Resvg or Chromium.
