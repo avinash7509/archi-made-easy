@@ -4,7 +4,7 @@ export type Pillar = 'reliability'|'security'|'cost'|'performance'|'operations'|
 export const pillars: Pillar[] = ['reliability','security','cost','performance','operations','sustainability'];
 export interface Evidence {id:string; kind:'observed'|'user-specified'|'vendor-published'|'inferred'|'proposed'; source:string; revision?:string; retrievedAt?:string; conditions?:string;}
 export interface Component {
- id:string; label:string; kind:string; provider?:string; service?:string; parent?:string; region?:string; az?:string;
+ id:string; label:string; kind:string; role?:string; provider?:string; service?:string; parent?:string; region?:string; az?:string;
  public?:boolean; tier?:number; stateful?:boolean; controls?:Record<string,boolean|number|string>; evidence?:string[];
  availability?:number; failureDomain?:string; capacityRps?:number; buffer?:number; retryFactor?:number; scaleDelaySeconds?:number;
  rtoSeconds?:number; rpoSeconds?:number; latencyMs?:number[]; attributes?:{name:string;type:string;key?:string}[];

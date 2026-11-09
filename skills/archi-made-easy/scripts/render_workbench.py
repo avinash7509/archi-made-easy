@@ -59,42 +59,81 @@ def failure(model, initial):
 
 
 def scene(model):
-    nodes = model['components']
-    boxes = []
-    def place(parent, x, y):
-        children = [n for n in nodes if n.get('parent') == parent]
-        cursor_y = y
-        max_x = x
-        for start in range(0, len(children), 3):
-            cursor_x, row_height = x, 0
-            for n in children[start:start+3]:
-                compound = any(c.get('parent') == n['id'] for c in nodes) or n['kind'] == 'boundary'
-                box = {'id':n['id'],'x':cursor_x,'y':cursor_y,'width':300,'height':100,'lines':[textwrap.shorten(n['label'],width=30,placeholder='…'), textwrap.shorten(n.get('service') or n['kind'],width=32,placeholder='…')], 'boundary':compound, 'parent':parent, 'row':cursor_y}
-                boxes.append(box)
-                if compound:
-                    width,height = place(n['id'],cursor_x+35,cursor_y+65)
-                    box['width'],box['height'] = max(370,width+70),max(165,height+100)
-                cursor_x += box['width']+100
-                row_height = max(row_height,box['height'])
-                max_x = max(max_x,cursor_x-100)
-            cursor_y += row_height+100
-        return max_x-x, max(0,cursor_y-y-100)
-    width,height=place(None,70,200)
+    nodes=model['components']; edges=model['relationships']; boxes=[]; planes=[]
+    bynode={n['id']:n for n in nodes}
+    def descendants(id):
+        return {id}.union(*(descendants(n['id']) for n in nodes if n.get('parent')==id))
+    def rank(children):
+        groups={n['id']:descendants(n['id']) for n in children}
+        deps={n['id']:set() for n in children}
+        for edge in edges:
+            if edge['kind'] not in ('sync','async','replication'):continue
+            source=next((id for id,ids in groups.items() if edge['from'] in ids),None)
+            target=next((id for id,ids in groups.items() if edge['to'] in ids),None)
+            if source and target and source!=target:deps[target].add(source)
+        result=[];pending=set(deps)
+        while pending:
+            ready=sorted((id for id in pending if not deps[id]&pending),key=lambda id:next(i for i,n in enumerate(children) if n['id']==id))
+            if not ready:ready=[next(n['id'] for n in children if n['id'] in pending)]
+            result.append(ready);pending.difference_update(ready)
+        return result
+    def place(parent,x,y):
+        children=[n for n in nodes if n.get('parent')==parent]
+        categories={'security':[],'core':[],'operations':[]}
+        for n in children:
+            category=theme(n)[0]
+            plane='security' if category=='Security / identity' else 'operations' if category=='Operations / telemetry' else 'core'
+            categories[plane].append(n)
+        cy=y;maxright=x
+        for plane,members in categories.items():
+            if not members:continue
+            ox=x+(36 if plane!='core' else 0);oy=cy+(56 if plane!='core' else 0)
+            cx=ox;bottom=oy
+            layers=rank(members) if plane=='core' else [[n['id']] for n in members]
+            band_bottom=oy
+            for li,layer in enumerate(layers):
+                if parent is not None and plane=='core' and li and li%3==0:
+                    cx=ox;oy=band_bottom+90
+                ly=oy;layerwidth=0
+                for id in layer:
+                    n=bynode[id];compound=n['kind']=='boundary' or any(v.get('parent')==id for v in nodes)
+                    degree=max(sum(e['from']==id for e in edges),sum(e['to']==id for e in edges))
+                    box={'id':id,'x':cx,'y':ly,'width':220,'height':max(84,20*(degree+1)), 'lines':[textwrap.shorten(n['label'],width=27,placeholder='…'),role(n)],'boundary':compound,'parent':parent,'row':ly}
+                    boxes.append(box)
+                    if compound:
+                        w,h=place(id,cx+36,ly+56);box['width']=max(300,w+72);box['height']=max(150,h+92)
+                    ly+=box['height']+90;layerwidth=max(layerwidth,box['width']);bottom=max(bottom,ly-90)
+                cx+=layerwidth+110;band_bottom=max(band_bottom,bottom)
+            right=max((b['x']+b['width'] for b in boxes if b.get('parent')==parent and b['id'] in {n['id'] for n in members}),default=cx-110)
+            if plane!='core':
+                planes.append({'id':'plane-'+plane+'-'+str(parent),'label':'Identity & Security Plane' if plane=='security' else 'Operations & Telemetry Plane','plane':plane,'x':x,'y':cy,'width':right-x+36,'height':bottom-cy+36,'members':[n['id'] for n in members]})
+                right+=36;bottom+=36
+            maxright=max(maxright,right);cy=bottom+110
+        return maxright-x,max(0,cy-y-110)
+    width,height=place(None,80,120)
     byid={b['id']:b for b in boxes}
     # Visibility-grid routing avoids leaf interiors; shared lanes remain explicit.
     obstacles=[b for b in boxes if not b['boundary']]
     routes=[]
     import heapq
+    used=[]
+    outgoing={id:[e for e in edges if e['from']==id] for id in byid}
+    incoming={id:[e for e in edges if e['to']==id] for id in byid}
     for i,e in enumerate(model['relationships']):
         a,b=byid[e['from']],byid[e['to']]
-        start=(a['x']+a['width'],a['y']+a['height']/2)
-        end=(b['x'],b['y']+b['height']/2)
-        xs=sorted(set([start[0],end[0]]+[v for n in boxes for v in (n['x']-20,n['x']+n['width']+20)]))
-        ys=sorted(set([start[1],end[1]]+[v for n in boxes for v in (n['y']-20,n['y']+n['height']+20)]))
+        start=(a['x']+a['width'],a['y']+a['height']*(outgoing[e['from']].index(e)+1)/(len(outgoing[e['from']])+1))
+        end=(b['x']-1,b['y']+b['height']*(incoming[e['to']].index(e)+1)/(len(incoming[e['to']])+1))
+        track=20+i*10
+        xs=sorted(set([start[0],end[0]]+[v for n in boxes for offset in [*range(20,100,10),track] for v in (n['x']-offset,n['x']+n['width']+offset)]))
+        ys=sorted(set([start[1],end[1]]+[v for n in boxes for offset in [*range(20,100,10),track] for v in (n['y']-offset,n['y']+n['height']+offset)]))
+        xs=[x for x in xs if x>=20];ys=[y for y in ys if y>=90]
         def clear(p,q):
             for n in obstacles:
                 if p[0]==q[0] and n['x']<p[0]<n['x']+n['width'] and max(p[1],q[1])>n['y'] and min(p[1],q[1])<n['y']+n['height']:return False
                 if p[1]==q[1] and n['y']<p[1]<n['y']+n['height'] and max(p[0],q[0])>n['x'] and min(p[0],q[0])<n['x']+n['width']:return False
+            for u,v in used:
+                if p[0]==q[0] and u[0]==v[0] and abs(p[0]-u[0])<9.99 and min(max(p[1],q[1]),max(u[1],v[1]))>max(min(p[1],q[1]),min(u[1],v[1])):return False
+                if p[1]==q[1] and u[1]==v[1] and abs(p[1]-u[1])<9.99 and min(max(p[0],q[0]),max(u[0],v[0]))>max(min(p[0],q[0]),min(u[0],v[0])):return False
             return True
         initial=(xs.index(start[0]),ys.index(start[1]),-1)
         queue=[(0,initial)];cost={initial:0};prev={};last=None
@@ -107,6 +146,8 @@ def scene(model):
                 nx,ny=ix+dx,iy+dy
                 if not(0<=nx<len(xs) and 0<=ny<len(ys)):continue
                 q=(xs[nx],ys[ny])
+                if p0==start and not(q[0]>p0[0] and q[1]==p0[1]):continue
+                if q==end and not(p0[0]<q[0] and q[1]==p0[1]):continue
                 if not clear(p0,q):continue
                 nxt=(nx,ny,di);value=distance+abs(p0[0]-q[0])+abs(p0[1]-q[1])+(25 if direction not in (-1,di) else 0)
                 if value<cost.get(nxt,float('inf')):cost[nxt]=value;prev[nxt]=state;heapq.heappush(queue,(value,nxt))
@@ -117,6 +158,11 @@ def scene(model):
             if last not in prev:break
             last=prev[last]
         points.reverse()
+        compressed=[]
+        for point in points:
+            while len(compressed)>1 and ((compressed[-2][0]==compressed[-1][0]==point[0]) or (compressed[-2][1]==compressed[-1][1]==point[1])):compressed.pop()
+            compressed.append(point)
+        points=compressed;used.extend(zip(points,points[1:]))
         label=e.get('protocol') or e.get('label') or e['kind']
         protocol=next((p for p in ['MCP','HTTPS','gRPC','AMQP','OIDC','OAuth','SQL','REST'] if p.lower() in label.lower()),e['kind'])
         color={'async':'#0f766e','control':'#b45309','telemetry':'#64748b'}.get(e['kind'],'#7c3aed' if protocol=='MCP' else '#0284c7')
@@ -125,70 +171,94 @@ def scene(model):
     for r in routes:
         candidates=[]
         for a,b in zip(r['points'],r['points'][1:]):
-            for fraction in (.5,.25,.75):
+            for fraction in (.35,.65,.5,.2,.8,.1,.9):
                 x=a[0]+(b[0]-a[0])*fraction-32;y=a[1]+(b[1]-a[1])*fraction-11
                 candidates.append((x,y))
+        for a,b in zip(r['points'],r['points'][1:]):
+            distance=abs(b[0]-a[0])+abs(b[1]-a[1])
+            for step in range(4,int(distance),4):
+                candidates.append((a[0]+(b[0]-a[0])*step/distance-32,a[1]+(b[1]-a[1])*step/distance-11))
         def overlaps(a,b):return a[0]<b[0]+b[2] and a[0]+a[2]>b[0] and a[1]<b[1]+b[3] and a[1]+a[3]>b[1]
         for x,y in candidates:
             rectangle=(x,y,64,22)
-            if any(overlaps(rectangle,(b['x'],b['y'],b['width'],b['height'])) for b in obstacles):continue
+            if any(overlaps(rectangle,(b['x']-20,b['y']-20,b['width']+40,b['height']+40)) for b in obstacles):continue
+            borders=[band for box in [*planes,*[b for b in boxes if b['boundary']]] for band in [(box['x']-4,box['y']-4,box['width']+8,8),(box['x']-4,box['y']+box['height']-4,box['width']+8,8),(box['x']-4,box['y'],8,box['height']),(box['x']+box['width']-4,box['y'],8,box['height'])]]
+            if any(overlaps(rectangle,band) for band in borders):continue
             if any(overlaps(rectangle,other) for other in occupied):continue
             r['labelX'],r['labelY']=x,y;occupied.append((x-4,y-4,72,30));break
         if 'labelX' not in r:
             r['labelX'],r['labelY']=r['points'][0][0]+8,r['points'][0][1]-11
             r['labelWarning']='Protocol label placement requires review'
-    return {'boxes':boxes,'routes':routes,'width':max(1100,width+140),'height':height+280}
+    return {'boxes':boxes,'routes':routes,'planes':planes,'width':max(1100,width+160,max((p[0] for r in routes for p in r['points']),default=0)+60),'height':max(height+200,max((p[1] for r in routes for p in r['points']),default=0)+60)}
 
 
 def view_models(model):
     return [('Full Master Architecture',model)]
 
 
+def role(node):
+    raw=node.get('role') or node.get('service') or node.get('kind','service')
+    names={'api-management':'API Gateway','api':'API Gateway','gateway':'API Gateway','service':'Application Service','identity':'Identity Provider','ai':'Agent Orchestrator','actor':'User / External Actor','database':'Database','storage':'Data Storage','queue':'Message Broker','monitor':'Observability Service','boundary':'Trust Boundary'}
+    return textwrap.shorten(names.get(raw,raw.replace('-',' ').replace('_',' ').title()),width=35,placeholder='…')
+
+
 def theme(node):
-    kind=node.get('kind','').lower()
-    if kind=='boundary':return ('Boundary / scope','#475569','#e2e8f0')
-    if kind in ('actor','external'):return ('Actor / external','#0f766e','#ccfbf1')
-    if kind in ('api','gateway','edge','loadbalancer'):return ('Edge / gateway','#1d4ed8','#dbeafe')
-    if kind in ('queue','broker','stream','messaging'):return ('Messaging','#9d174d','#fce7f3')
-    if kind in ('database','storage','cache'):return ('Database / storage','#166534','#dcfce7')
-    if kind in ('identity','security','secret') or 'vault' in node.get('label','').lower():return ('Security / identity','#92400e','#fef3c7')
-    if kind in ('monitor','observability','management') or 'monitor' in node.get('label','').lower():return ('Operations','#0e7490','#cffafe')
-    return ('Compute / workload','#6d28d9','#ede9fe')
+    kind=node.get('kind','').lower();label=(node.get('label','')+' '+node.get('service','')).lower()
+    if kind=='boundary':return ('Boundary / scope','#6366f1','#f8fafc')
+    if kind in ('actor','external'):return ('Actor / external','#94a3b8','#f8fafc')
+    if kind in ('identity','security','secret') or any(w in label for w in ['key vault','kms','iam','certificate','entra']):return ('Security / identity','#ec4899','#fdf2f8')
+    if kind in ('monitor','observability','management') or any(w in label for w in ['monitor','logging','siem','telemetry','apm']):return ('Operations / telemetry','#06b6d4','#ecfeff')
+    if kind in ('api','gateway','edge','loadbalancer'):return ('Edge / gateway','#f59e0b','#fffbeb')
+    if kind in ('queue','broker','stream','messaging'):return ('Messaging / broker','#f97316','#fff7ed')
+    if kind in ('database','storage','cache'):return ('Database / storage','#8b5cf6','#f5f3ff')
+    return ('Compute / workload','#10b981','#ecfdf5')
+
+
+def rounded_path(points):
+    if len(points)<2:return ''
+    result=f'M {points[0][0]} {points[0][1]}'
+    for i in range(1,len(points)-1):
+        a,b,c=points[i-1],points[i],points[i+1]
+        before=abs(b[0]-a[0])+abs(b[1]-a[1]);after=abs(c[0]-b[0])+abs(c[1]-b[1]);r=min(6,before/2,after/2)
+        if not before or not after:continue
+        p=[b[j]+(a[j]-b[j])*r/before for j in (0,1)];q=[b[j]+(c[j]-b[j])*r/after for j in (0,1)]
+        result+=f' L {p[0]} {p[1]} Q {b[0]} {b[1]} {q[0]} {q[1]}'
+    return result+f' L {points[-1][0]} {points[-1][1]}'
+
+
+def boundary_style(label):
+    text=label.lower()
+    if any(k in text for k in ['security','identity']):return '#ec4899'
+    if any(k in text for k in ['operations','telemetry','monitor']):return '#06b6d4'
+    if any(k in text for k in ['external','enterprise application']):return '#64748b'
+    return '#6366f1'
 
 
 def svg(model, s):
     esc = html.escape
     nodes = {n['id']:n for n in model['components']}
     roles = list(dict.fromkeys(theme(nodes[b['id']]) for b in s['boxes']))
-    markers = ''.join(f'<marker id="arrow-{i}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="{r["color"]}"/></marker>' for i,r in enumerate(s['routes']))
-    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{s["width"]}" height="{s["height"]}" viewBox="0 0 {s["width"]} {s["height"]}" style="font-family:Arial,sans-serif"><defs>{markers}</defs><rect width="100%" height="100%" fill="#f8fafc"/>', f'<text x="30" y="35" font-size="24" font-weight="700" fill="#0f172a">Archi-Made-Easy · {esc(model.get("mode", "unspecified"))}</text><text x="30" y="64" font-size="16" fill="#475569">Select a component to inspect controls, evidence and failure impact</text>']
-    legend_cols = max(1, (s['width']-60)//172)
-    for i,(role,accent,tint) in enumerate(roles):
-        x = 30 + (i%legend_cols)*172
-        ly = 82 + (i//legend_cols)*34
-        parts.append(f'<rect x="{x}" y="{ly}" width="160" height="28" rx="14" fill="{tint}"/><circle cx="{x+14}" cy="{ly+14}" r="5" fill="{accent}"/><text x="{x+26}" y="{ly+19}" font-size="13" font-weight="700" fill="{accent}">{esc(role)}</text>')
-    parts.append(f'<text x="30" y="{137+34*((len(roles)-1)//legend_cols)}" font-size="14" fill="#475569">Flows: purple MCP · blue REST · amber control · dashed non-sync · gaps denote crossings</text>')
-    for b in s['boxes']:
-        if b.get('boundary'):
-            parts.append(f'<g class="node boundary" data-id="{esc(b["id"])}"><rect class="card" x="{b["x"]}" y="{b["y"]}" width="{b["width"]}" height="{b["height"]}" rx="12" fill="#e2e8f0" fill-opacity=".35" stroke="#64748b" stroke-dasharray="8 4"/><text x="{b["x"]+16}" y="{b["y"]+28}" font-size="16">{esc(nodes[b["id"]]["label"])}</text></g>')
+    markers = ''.join(f'<marker id="arrow-{i}" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M1 1 L7 4 L1 7" fill="none" stroke="{r["color"]}" stroke-width="1.5"/></marker>' for i,r in enumerate(s['routes']))
+    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{s["width"]}" height="{s["height"]}" viewBox="0 0 {s["width"]} {s["height"]}" style="font-family:Arial,sans-serif"><defs>{markers}</defs><rect width="100%" height="100%" fill="white"/>', f'<text x="30" y="35" font-size="22" font-weight="600" fill="#0f172a">{esc(model.get("title","Archi-Made-Easy"))}</text><text x="30" y="64" font-size="13" fill="#64748b">{esc(model.get("mode","unspecified").upper())} · Full architecture · Logical planes do not imply network isolation</text>']
+    containers=[dict(b,label=nodes[b['id']]['label']) for b in s['boxes'] if b.get('boundary')]+s.get('planes',[])
+    for b in sorted(containers,key=lambda b:b['width']*b['height'],reverse=True):
+        color=boundary_style(b['label']);synthetic='members' in b
+        attrs=f'data-plane="{b["plane"]}"' if synthetic else f'data-id="{esc(b["id"])}"'
+        classes='plane' if synthetic else 'node boundary'
+        title=textwrap.shorten(b['label'],width=max(20,int((b['width']-32)/7)),placeholder='…');pill=min(b['width']-24,len(title)*7+24)
+        parts.append(f'<g class="{classes}" {attrs}><rect class="card" x="{b["x"]}" y="{b["y"]}" width="{b["width"]}" height="{b["height"]}" rx="10" fill="{color}" fill-opacity=".025" stroke="{color}" stroke-width="1" stroke-dasharray="6 4"/><rect x="{b["x"]+12}" y="{b["y"]+10}" width="{pill}" height="24" rx="6" fill="white" stroke="{color}" stroke-opacity=".25"/><text x="{b["x"]+24}" y="{b["y"]+26}" font-size="12" font-weight="600" fill="{color}">{esc(title)}</text></g>')
     for i,r in enumerate(s['routes']):
-        d = ' '.join(('M' if j == 0 else 'L') + f'{p[0]} {p[1]}' for j, p in enumerate(r['points']))
+        d = rounded_path(r['points'])
         dash = '' if r['kind']=='sync' else 'stroke-dasharray="6 4"' if r['kind']=='async' else 'stroke-dasharray="3 3"'
-        parts.append(f'<g class="edge" data-edge="{esc(r["id"])}"><path d="{d}" fill="none" stroke="#f8fafc" stroke-width="9"/><path d="{d}" fill="none" stroke="{r["color"]}" stroke-width="{2 if r["kind"] in ("sync","async") else 1.5}" {dash} marker-end="url(#arrow-{i})"/>')
+        parts.append(f'<g class="edge" data-edge="{esc(r["id"])}"><circle cx="{r["points"][0][0]}" cy="{r["points"][0][1]}" r="3.5" fill="{r["color"]}"/><path d="{d}" fill="none" stroke="{r["color"]}" stroke-width="{2 if r["kind"] in ("sync","async") else 1.5}" {dash} marker-end="url(#arrow-{i})"/>')
         px, py = r['labelX']-4,r['labelY']+11
-        parts.append(f'<rect x="{px+4}" y="{py-11}" width="64" height="22" rx="6" fill="{r["color"]}"/><text x="{px+36}" y="{py+5}" text-anchor="middle" font-size="13" font-weight="700" fill="white">{esc(r["protocol"])}</text></g>')
+        parts.append(f'<rect x="{px+4}" y="{py-11}" width="64" height="22" rx="6" fill="white" stroke="{r["color"]}" stroke-width="1" style="filter:drop-shadow(0 1px 2px rgba(0,0,0,.06))"/><text x="{px+36}" y="{py+5}" text-anchor="middle" font-size="10" font-weight="500" fill="#334155">{esc(r["protocol"])}</text></g>')
     for b in s['boxes']:
         if b.get('boundary'):continue
         node = nodes[b['id']]
         role, accent, tint = theme(node)
-        title_count = 1
-        hh = 20 + title_count*22
-        x,y,w = b['x'],b['y'],b['width']
-        parts.append(f'<g class="node" data-id="{esc(b["id"], quote=True)}" tabindex="0" role="button" aria-label="{esc(node["label"], quote=True)}"><rect class="card" x="{x}" y="{y}" width="{w}" height="{b["height"]}" rx="10" fill="{tint}" stroke="{accent}" stroke-width="1.5"/><path d="M{x+10} {y} H{x+w-10} Q{x+w} {y} {x+w} {y+10} V{y+hh} H{x} V{y+10} Q{x} {y} {x+10} {y}Z" fill="{accent}"/>')
-        for j, line in enumerate(b['lines']):
-            ink = 'white' if j<title_count else '#1e293b'
-            weight = '700' if j<title_count else '400'
-            parts.append(f'<text x="{x+18}" y="{y+35+j*22}" font-size="16" font-weight="{weight}" fill="{ink}">{esc(line)}</text>')
+        x,y,w=b['x'],b['y'],b['width']
+        parts.append(f'<g class="node" data-id="{esc(b["id"],quote=True)}" tabindex="0" role="button" aria-label="{esc(node["label"],quote=True)}"><rect class="card" x="{x}" y="{y}" width="{w}" height="{b["height"]}" rx="8" fill="{tint}" stroke="{accent}" stroke-width="1.5" style="filter:drop-shadow(0 2px 5px rgba(15,23,42,.06))"/><circle cx="{x+16}" cy="{y+27}" r="4" fill="{accent}"/><text x="{x+28}" y="{y+32}" font-size="13" font-weight="600" fill="#0f172a">{esc(b["lines"][0])}</text><text x="{x+14}" y="{y+54}" font-size="11" fill="#475569">{esc(b["lines"][1])}</text>')
         parts.append('</g>')
     return ''.join(parts) + '</svg>'
 
@@ -199,19 +269,25 @@ def drawio(model, s):
     root = ET.SubElement(ET.SubElement(diagram, 'mxGraphModel'), 'root')
     ET.SubElement(root, 'mxCell', id='0')
     ET.SubElement(root, 'mxCell', id='1', parent='0')
+    for index,plane in enumerate(s.get('planes',[])):
+        color=boundary_style(plane['label'])
+        cell=ET.SubElement(root,'mxCell',id='visual-plane-'+str(index),value=plane['label'],vertex='1',parent='1',style=f'rounded=1;dashed=1;dashPattern=6 4;fillColor={color};fillOpacity=3;strokeColor={color};verticalAlign=top;align=left;spacing=12;fontSize=12;')
+        ET.SubElement(cell,'mxGeometry',x=str(plane['x']),y=str(plane['y']),width=str(plane['width']),height=str(plane['height']),attrib={'as':'geometry'})
     ids = {n['id']: 'n-' + n['id'] for n in model['components']}
     nodes = {n['id']:n for n in model['components']}
     geometry_by_id = {b['id']:b for b in s['boxes']}
     for b in s['boxes']:
         parent = geometry_by_id.get(b.get('parent'))
         role, accent, tint = theme(nodes[b['id']])
-        cell = ET.SubElement(root, 'mxCell', id=ids[b['id']], value='\n'.join(b['lines']), vertex='1', parent=ids[b['parent']] if parent else '1', style=f'rounded=1;whiteSpace=wrap;html=0;fontSize=16;fontColor=#1e293b;fillColor={tint};strokeColor={accent};strokeWidth=2;', semanticId=b['id'])
+        extra='dashed=1;dashPattern=6 4;fillOpacity=3;verticalAlign=top;align=left;spacing=12;' if b.get('boundary') else ''
+        if b.get('boundary'):accent=boundary_style(nodes[b['id']]['label'])
+        cell = ET.SubElement(root, 'mxCell', id=ids[b['id']], value='\n'.join(b['lines']), vertex='1', parent=ids[b['parent']] if parent else '1', style=f'rounded=1;whiteSpace=wrap;html=0;fontSize=13;fontColor=#1e293b;fillColor={tint};strokeColor={accent};strokeWidth=1.5;'+extra, semanticId=b['id'])
         ET.SubElement(cell, 'mxGeometry', x=str(b['x']-(parent['x'] if parent else 0)), y=str(b['y']-(parent['y'] if parent else 0)), width=str(b['width']), height=str(b['height']), attrib={'as': 'geometry'})
     byid = {b['id']:b for b in s['boxes']}
     for e, r in zip(model['relationships'], s['routes']):
         a, b = byid[e['from']], byid[e['to']]
         ports = f'exitX=1;entryX=0;exitY={(r["points"][0][1]-a["y"])/a["height"]};entryY={(r["points"][-1][1]-b["y"])/b["height"]};strokeColor={r["color"]};dashed={int(e["kind"]!="sync")};'
-        cell = ET.SubElement(root, 'mxCell', id='e-' + e['id'], value=str(r['number']) + '. ' + e.get('label', e['kind']), edge='1', parent='1', source=ids[e['from']], target=ids[e['to']], style='edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;endArrow=block;'+ports, semanticId=e['id'])
+        cell = ET.SubElement(root, 'mxCell', id='e-' + e['id'], value=str(r['number']) + '. ' + e.get('label', e['kind']), edge='1', parent='1', source=ids[e['from']], target=ids[e['to']], style='edgeStyle=orthogonalEdgeStyle;rounded=1;arcSize=6;html=0;endArrow=open;'+ports, semanticId=e['id'])
         geo = ET.SubElement(cell, 'mxGeometry', relative='1', attrib={'as': 'geometry'})
         points = ET.SubElement(geo, 'Array', attrib={'as': 'points'})
         for x, y in r['points'][1:-1]:
@@ -221,10 +297,10 @@ def drawio(model, s):
 
 PAGE = r'''<!doctype html><html lang="en"><meta charset="utf-8"><title>Archi-Made-Easy workbench</title>
 <style>body{margin:0;font:15px Arial;color:#172033;background:#f1f5f9}header{padding:18px 20px;background:#0f172a;color:white;border-bottom:4px solid #8b5cf6;display:flex;gap:12px;flex-wrap:wrap}button,select,input{font:inherit;padding:9px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;color:#0f172a}button{cursor:pointer}button:hover{background:#ede9fe}header strong{font-size:19px;letter-spacing:-.4px;margin-right:8px}main{display:grid;grid-template-columns:minmax(0,1fr) 300px;height:calc(100vh - 80px)}#canvas{overflow:auto;background:#f8fafc}#drawing{transform-origin:0 0}aside{padding:22px;overflow:auto;background:white;border-left:1px solid #dbeafe}aside h2{font-size:20px;margin:10px 0 18px}aside details{margin-top:18px;padding:12px;background:#f1f5f9;border-radius:8px}aside summary{cursor:pointer;color:#334155;font-weight:600}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:13px monospace}.node{cursor:pointer}.node.failed .card{fill:#fee2e2;stroke:#dc2626;stroke-width:4}.node.degraded .card{fill:#fef3c7;stroke:#d97706;stroke-width:4}.node.match .card{stroke:#2563eb;stroke-width:4}.node:focus{outline:none}.node:focus .card{stroke:#0f172a;stroke-width:4}</style>
-<header><strong>Archi-Made-Easy</strong><select id="view" aria-label="Topology"></select><input id="search" placeholder="Search components"><button id="fit">Fit view</button><button id="minus">−</button><button id="plus">+</button><label><input type="checkbox" id="failure">Failure simulation</label></header><main><div id="canvas"><div id="drawing"></div></div><aside><span style="font-size:11px;font-weight:700;letter-spacing:1.6px;color:#6d28d9">ARCHITECTURE INSPECTOR</span><h2>Explore your system</h2><div id="summary" style="white-space:pre-wrap;line-height:1.6"></div><details><summary>Technical evidence and model</summary><pre id="detail"></pre></details><details><summary>Assessment scope</summary><p>Restricted-host renderer. WAF, full schema validation, availability and visual review: not performed. Containment is shown as scope text, not nested geometry. Colors identify roles, not verified security status.</p></details></aside></main>
+<header><strong>Archi-Made-Easy</strong><select id="view" aria-label="Topology"></select><input id="search" placeholder="Search components"><button id="fit">Fit view</button><button id="minus">−</button><button id="plus">+</button><label><input type="checkbox" id="failure">Failure simulation</label></header><main><div id="canvas"><div id="drawing"></div></div><aside><span style="font-size:11px;font-weight:700;letter-spacing:1.6px;color:#6d28d9">ARCHITECTURE INSPECTOR</span><h2>Explore your system</h2><div id="summary" style="white-space:pre-wrap;line-height:1.6"></div><details><summary>Technical evidence and model</summary><pre id="detail"></pre></details><details><summary>Assessment scope</summary><p>Restricted-host renderer. WAF, full schema validation, availability and visual review: not performed. Nested boundaries preserve modeled containment. Plane groupings organize the view; they are not additional security controls. Colors identify roles, not verified security status.</p></details></aside></main>
 <script>const tabs=__DATA__;const $=id=>document.getElementById(id);let current=0,zoom=1;
 for(let i=0;i<tabs.length;i++){const o=document.createElement('option');o.value=i;o.textContent=(tabs[i].model.mode||'architecture')+' · '+tabs[i].title;$('view').append(o)}
-function fit(){zoom=Math.min(1,Math.max(.65,($('canvas').clientWidth-20)/tabs[current].width));$('drawing').style.zoom=zoom} $('fit').onclick=fit;function show(){$('drawing').innerHTML=tabs[current].svg;fit();$('summary').textContent=tabs[current].title+'\n\n'+tabs[current].visibleEdges.map((e,i)=>(i+1)+'. '+(e.label||e.kind)).join('\n')+'\n\nSelect a component for its proposed controls and evidence. Failure analysis uses the entire model, including other views.';$('detail').textContent=JSON.stringify({view:tabs[current].title,note:'Scoped view; relationships outside this view remain in the full model. Failure simulation uses the full model.',flows:tabs[current].visibleEdges.map((e,i)=>({number:i+1,...e})),assumptions:tabs[current].model.assumptions},null,2)}
+function fit(){zoom=Math.min(1,Math.max(.65,($('canvas').clientWidth-20)/tabs[current].width));$('drawing').style.zoom=zoom} $('fit').onclick=fit;function show(){$('drawing').innerHTML=tabs[current].svg;fit();$('summary').textContent='Select a card for its controls and evidence, or a sequence step below to focus a connection.';$('detail').textContent=JSON.stringify({view:tabs[current].title,note:'Scoped view; relationships outside this view remain in the full model. Failure simulation uses the full model.',flows:tabs[current].visibleEdges.map((e,i)=>({number:i+1,...e})),assumptions:tabs[current].model.assumptions},null,2)}
 $('view').onchange=e=>{current=+e.target.value;show()};$('search').oninput=e=>document.querySelectorAll('.node').forEach(n=>n.classList.toggle('match',!!e.target.value&&n.textContent.toLowerCase().includes(e.target.value.toLowerCase())));
 $('plus').onclick=()=>{$('drawing').style.zoom=zoom=Math.min(3,zoom*1.2)};$('minus').onclick=()=>{$('drawing').style.zoom=zoom=Math.max(.2,zoom/1.2)};
 function inspect(e){const n=e.target.closest('.node');if(!n)return;const t=tabs[current],id=n.dataset.id,component=t.model.components.find(n=>n.id===id),sim=$('failure').checked?t.failures[id]:null;$('summary').textContent=component.label+'\n\n'+Object.entries(component.controls||{}).map(([k,v])=>k+': '+v).join('\n')+(sim?'\n\nUnavailable: '+sim.failed.join(', ')+'\nDegraded: '+sim.degraded.join(', '):'');$('detail').textContent=JSON.stringify({component,evidence:t.model.evidence?.filter(e=>component.evidence?.includes(e.id)),simulation:sim},null,2);document.querySelectorAll('.node').forEach(n=>{n.classList.toggle('failed',!!sim?.failed.includes(n.dataset.id));n.classList.toggle('degraded',!!sim?.degraded.includes(n.dataset.id))})}

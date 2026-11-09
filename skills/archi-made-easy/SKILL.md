@@ -39,3 +39,5 @@ The compact renderer defaults to one full master architecture containing all com
 ## Master delivery contract
 
 Deliver top-level `architecture-master.svg`, `architecture-master.png` when an installed rasterizer succeeds, `archi-workbench.html`, editable `architecture.drawio`, CASG, and `architecture-artifacts.zip`. Link the master SVG/PNG as the inline preview and link the workbench separately. All components must remain mounted when a lens or sequence step is selected. Do not replace the master with an isolated detail view. PNG absence must be reported, not hidden or replaced by an unrelated sketch. Standard Python generates SVG/HTML/draw.io without downloads; PNG requires installed CairoSVG, Resvg or Chromium.
+
+For plane grouping, routing clearance, custom role subtitles and visual-review limits, read `references/visual-geometry.md`.
